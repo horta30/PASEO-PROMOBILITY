@@ -10,8 +10,6 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Barlow:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 
 <style>
 :root {
@@ -366,50 +364,25 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
       <div class="sec-label">Mapa de Ruta</div>
       <h2 class="sec-title">TERRITORIO<br>EN VIVO</h2>
     </div>
-    <p class="map-desc">Mapa 3D con relieve real. Activa GPS y navega la ruta con tu posición en tiempo real. Funciona sin internet una vez cargado.</p>
+    <p class="map-desc">Mapa con relieve real. Activa GPS y navega tu posición en tiempo real. Funciona sin internet una vez cargado.</p>
   </div>
 
-  <!-- CTA PRINCIPAL -->
-  <div class="map-cta-wrap reveal">
-    <button class="btn-nav-ruta" onclick="openFullscreenMap()">
-      <span class="arrow">▶</span> NAVEGA LA RUTA AQUÍ
-    </button>
-    <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--grey);">GPS · Terreno 3D · Offline</span>
-  </div>
-  <div id="map-wrap" class="reveal">
-    <div id="mapbox-map"></div>
-    <canvas id="canvas-map"></canvas>
-    <div class="map-ui">
-      <div id="gps-btn" onclick="toggleGPS()">
-        <div class="gps-dot" id="gps-dot"></div>
-        <span id="gps-label">Activar GPS</span>
+  <!-- PREVIEW MAP — canvas estilizado -->
+  <div class="map-cta-wrap reveal" style="margin-top:0;margin-bottom:0;">
+    <div id="map-preview" style="position:relative;width:100%;height:clamp(420px,55vh,620px);overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openFullscreenMap()">
+      <canvas id="preview-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+      <!-- CTA overlay -->
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(8,8,8,0.35);transition:background .3s;" id="preview-overlay">
+        <button style="background:var(--orange);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);letter-spacing:.08em;padding:20px 48px;border:none;cursor:pointer;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));display:flex;align-items:center;gap:14px;transition:background .2s;">
+          <span style="animation:arrowPulse 1.5s infinite;display:inline-block;">▶</span> NAVEGA LA RUTA AQUÍ
+        </button>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.25em;text-transform:uppercase;color:rgba(242,237,228,.7);">GPS EN VIVO · OFFLINE · 9 CHECKPOINTS</span>
       </div>
-      <div class="map-zoom">
-        <button class="mzoom" onclick="mapZoom(1)">+</button>
-        <button class="mzoom" onclick="mapZoom(-1)">−</button>
-      </div>
-      <div class="map-styles">
-        <button class="mstyle on" data-s="satellite" onclick="setMapStyle(this)">Satélite</button>
-        <button class="mstyle" data-s="terrain" onclick="setMapStyle(this)">Terreno</button>
-        <button class="mstyle" data-s="dark" onclick="setMapStyle(this)">Oscuro</button>
-      </div>
-      <!-- Follow mode button -->
-      <button id="follow-btn" onclick="toggleFollow()"
-        style="position:absolute;bottom:52px;right:16px;background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:8px 14px;cursor:pointer;transition:all .2s;pointer-events:all;">
-        ⊙ Seguirme
-      </button>
-
-      <!-- HUD navegación -->
-      <div id="nav-hud"
-        style="position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(8,8,8,.82);backdrop-filter:blur(10px);border:1px solid var(--border);padding:8px 16px;display:none;gap:20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.15em;color:var(--white);pointer-events:none;white-space:nowrap;">
-      </div>
-
-      <div id="wp-panel">
-        <div class="wpp-header">
-          <span class="wpp-num" id="wpp-num"></span>
-          <button class="wpp-close" onclick="closePanel()">✕</button>
-        </div>
-        <div class="wpp-body" id="wpp-body"></div>
+      <!-- Route stats overlay bottom -->
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 20px;background:linear-gradient(to top,rgba(8,8,8,.9),transparent);display:flex;gap:24px;pointer-events:none;">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);">25.9 <span style="font-size:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;color:var(--orange);">KM</span></span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);">655 <span style="font-size:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;color:var(--orange);">MSNM</span></span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);">9 <span style="font-size:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.2em;color:var(--orange);">CHECKPOINTS</span></span>
       </div>
     </div>
   </div>
@@ -493,163 +466,52 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
   <div class="foot-copy" style="color:#1e1e1e;">horta30.github.io/paseo-promobility</div>
 </footer>
 
-<!-- FULLSCREEN MAP MODE -->
+<!-- FULLSCREEN MAP — Leaflet + OSM, sin token -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <div id="map-fullscreen">
   <div class="fs-topbar">
     <div class="fs-title">PASEO <span>PROMOBILITY</span></div>
     <div class="fs-stats">
       <div class="fs-stat"><span class="fs-stat-val">25.9</span><span class="fs-stat-key">km</span></div>
       <div class="fs-stat"><span class="fs-stat-val">655</span><span class="fs-stat-key">msnm</span></div>
-      <div class="fs-stat"><span class="fs-stat-val">9</span><span class="fs-stat-key">checkpoints</span></div>
+      <div class="fs-stat"><span class="fs-stat-val">9</span><span class="fs-stat-key">WP</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <div id="fs-hud" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.15em;color:var(--grey);display:none;gap:16px;"></div>
       <button class="fs-gps" id="fs-gps-btn" onclick="toggleFsGPS()">
-        <div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div>
+        <div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.3);flex-shrink:0;"></div>
         Activar GPS
       </button>
-      <button class="fs-close" onclick="closeFullscreenMap()">✕ Cerrar mapa</button>
+      <button class="fs-close" onclick="closeFullscreenMap()">✕ Cerrar</button>
     </div>
   </div>
   <div id="map-fullscreen-inner">
-    <div id="mapbox-map-fs"></div>
-    <!-- Waypoint panel fullscreen -->
-    <div id="wp-panel-fs" style="position:absolute;right:0;top:0;bottom:0;width:300px;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow-y:auto;z-index:10;">
-      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(8,8,8,.98);z-index:10;">
+    <div id="leaflet-map" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;"></div>
+    <!-- Style switcher -->
+    <div style="position:absolute;bottom:24px;left:16px;display:flex;gap:6px;z-index:1000;">
+      <button class="mstyle on" data-ls="topo" onclick="setLeafletStyle(this)">Topo</button>
+      <button class="mstyle" data-ls="satellite" onclick="setLeafletStyle(this)">Satélite</button>
+      <button class="mstyle" data-ls="osm" onclick="setLeafletStyle(this)">Calles</button>
+    </div>
+    <!-- Follow btn -->
+    <button id="fs-follow-btn" onclick="toggleFsFollow()"
+      style="position:absolute;bottom:24px;right:16px;background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:10px 16px;cursor:pointer;z-index:1000;">
+      ⊙ Seguirme
+    </button>
+    <!-- WP Panel -->
+    <div id="wp-panel-fs" style="position:absolute;right:0;top:0;bottom:0;width:300px;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow-y:auto;z-index:1000;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(8,8,8,.98);">
         <span id="fs-wpp-num" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--orange);"></span>
         <button onclick="closeFsPanel()" style="background:none;border:1px solid var(--border);color:var(--grey);width:28px;height:28px;cursor:pointer;font-size:13px;">✕</button>
       </div>
       <div id="fs-wpp-body" style="padding:18px;"></div>
     </div>
-    <!-- Follow btn -->
-    <button id="fs-follow-btn" onclick="toggleFsFollow()"
-      style="position:absolute;bottom:24px;right:16px;background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:10px 16px;cursor:pointer;z-index:5;">
-      ⊙ Seguirme
-    </button>
-    <!-- Style btns -->
-    <div style="position:absolute;bottom:24px;left:16px;display:flex;gap:6px;z-index:5;">
-      <button class="mstyle on" data-fs="satellite" onclick="setFsStyle(this)">Satélite</button>
-      <button class="mstyle" data-fs="terrain" onclick="setFsStyle(this)">Terreno</button>
-      <button class="mstyle" data-fs="dark" onclick="setFsStyle(this)">Oscuro</button>
-    </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════
-// FULLSCREEN MAP
-// ══════════════════════════════════════════
-let fsMap=null, fsMapReady=false, fsUserDot=null, fsFollowMode=true;
-let fsGpsOn=false, fsGpsWatch=null, fsVisited=new Set();
-
-window.openFullscreenMap=function(){
-  document.getElementById('map-fullscreen').classList.add('open');
-  document.body.style.overflow='hidden';
-
-  // Mover el mapa existente al container fullscreen
-  const fsInner = document.getElementById('map-fullscreen-inner');
-  const mapEl = document.getElementById('mapbox-map');
-
-  if(map && mapReady){
-    // Mover el div del mapa al fullscreen
-    fsInner.insertBefore(mapEl, fsInner.firstChild);
-    map.resize();
-    // Vista inmersiva con relieve
-    map.easeTo({
-      center:[-71.37880,-32.68066],
-      zoom:12.5,
-      pitch:62,
-      bearing:30,
-      duration:2500
-    });
-    fsMap = map;
-    fsMapReady = true;
-  }
-};
-
-window.closeFullscreenMap=function(){
-  document.getElementById('map-fullscreen').classList.remove('open');
-  document.body.style.overflow='';
-  if(fsGpsOn) toggleFsGPS();
-
-  // Devolver el mapa a su container original
-  const mapWrap = document.getElementById('map-wrap');
-  const mapEl = document.getElementById('mapbox-map');
-  if(mapEl && mapWrap){
-    mapWrap.insertBefore(mapEl, mapWrap.firstChild);
-    if(map) map.resize();
-  }
-};
-
-// fs GPS usa el mapa principal
-window.toggleFsGPS = window.toggleGPS;
-window.toggleFsFollow = window.toggleFollow;
-window.setFsStyle = function(btn){
-  document.querySelectorAll('[data-fs]').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  // Sync con botones del mapa principal
-  const s = btn.dataset.fs;
-  document.querySelectorAll('[data-s]').forEach(b=>{
-    b.classList.toggle('on', b.dataset.s===s);
-  });
-  if(!map) return;
-  map.setStyle(MAP_STYLES[s]);
-  map.once('styledata',()=>{
-    if(!map.getSource('mapbox-dem')){
-      map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
-      map.setTerrain({source:'mapbox-dem',exaggeration:2.5});
-    }
-    addMapLayers();
-  });
-};
-
-function openFsPanel(wp){
-  // Reusar panel principal
-  openPanel(wp);
-}
-window.closeFsPanel=function(){ closePanel(); };
-
-// GPS fullscreen — sincroniza botones del topbar
-const _origToggleGPS = window.toggleGPS;
-window.toggleFsGPS = function(){
-  _origToggleGPS();
-  // Sync botón del topbar fullscreen
-  const btn = document.getElementById('fs-gps-btn');
-  if(!btn) return;
-  if(gpsOn){
-    btn.classList.add('active');
-    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:#fff;animation:gpsPulse 1.5s infinite;flex-shrink:0;"></div> GPS Activo`;
-    const hud=document.getElementById('fs-hud');
-    if(hud) hud.style.display='flex';
-  } else {
-    btn.classList.remove('active');
-    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div> Activar GPS`;
-    const hud=document.getElementById('fs-hud');
-    if(hud) hud.style.display='none';
-  }
-};
-
-window.toggleFsFollow=window.toggleFollow;
-
-window.setFsStyle=function(btn){
-  document.querySelectorAll('[data-fs]').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  if(!fsMap) return;
-  fsMap.setStyle(MAP_STYLES[btn.dataset.fs]);
-  fsMap.once('styledata',()=>{
-    if(!fsMap.getSource('mapbox-dem')){
-      fsMap.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
-      fsMap.setTerrain({source:'mapbox-dem',exaggeration:2.5});
-    }
-    // Re-add route
-    if(!fsMap.getSource('fs-route')){
-      fsMap.addSource('fs-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
-      fsMap.addLayer({id:'fs-route-glow',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':18,'line-opacity':.18,'line-blur':12}});
-      fsMap.addLayer({id:'fs-route-line',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':4,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});
-    }
-  });
-};
-
 // Cerrar con Escape
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeFullscreenMap();
@@ -773,205 +635,212 @@ const ELEV=[[0,101],[3,130],[6,165],[9,210],[12,255],[15,305],[18,365],[21,425],
 })();
 
 // ══════════════════════════════════════════
-// MAP — NAVEGACIÓN APP
+// PREVIEW MAP — Canvas estilizado con relieve
 // ══════════════════════════════════════════
-mapboxgl.accessToken='pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcTF3bXAifQ.rJcFIG214AriISLbB4io9A';
-const MAP_STYLES={
-  satellite:'mapbox://styles/mapbox/satellite-streets-v12',
-  terrain:'mapbox://styles/mapbox/outdoors-v12',
-  dark:'mapbox://styles/mapbox/dark-v11'
+(function(){
+  const c = document.getElementById('preview-canvas');
+  if(!c) return;
+
+  function draw(){
+    const W = c.offsetWidth, H = c.offsetHeight;
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // Bounds de la ruta
+    const minLon=-71.415, maxLon=-71.318, minLat=-32.722, maxLat=-32.668;
+    const tx = lon => (lon-minLon)/(maxLon-minLon)*W;
+    const ty = lat => (1-(lat-minLat)/(maxLat-minLat))*H;
+
+    // Fondo — gradiente tipo terreno
+    const bg = ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#1a2a1a');
+    bg.addColorStop(0.4,'#152415');
+    bg.addColorStop(1,'#0d180d');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+    // Curvas de nivel simuladas — efecto topo
+    for(let i=0;i<12;i++){
+      ctx.beginPath();
+      const yOff = H*0.15 + i*(H*0.07);
+      const amp = 15 + i*3;
+      for(let x=0;x<=W;x+=4){
+        const y = yOff + Math.sin(x/W*Math.PI*4+i*0.7)*amp + Math.sin(x/W*Math.PI*8+i*1.3)*amp*0.4;
+        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = `rgba(60,100,60,${0.12 - i*0.005})`;
+      ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // Zonas de elevación — manchas de color
+    const elevGrad = ctx.createRadialGradient(W*0.55,H*0.35,10,W*0.55,H*0.35,W*0.35);
+    elevGrad.addColorStop(0,'rgba(120,90,40,0.25)');
+    elevGrad.addColorStop(0.5,'rgba(80,110,50,0.1)');
+    elevGrad.addColorStop(1,'transparent');
+    ctx.fillStyle = elevGrad; ctx.fillRect(0,0,W,H);
+
+    // Grid sutil
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 0.5;
+    for(let i=0;i<8;i++){
+      ctx.beginPath(); ctx.moveTo(i/8*W,0); ctx.lineTo(i/8*W,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i/8*H); ctx.lineTo(W,i/8*H); ctx.stroke();
+    }
+
+    // Sombra de ruta (glow)
+    ctx.beginPath();
+    ROUTE.forEach(([lon,lat],i) => {
+      const x=tx(lon), y=ty(lat);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = 'rgba(255,69,0,0.2)';
+    ctx.lineWidth = 18; ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.filter = 'blur(6px)'; ctx.stroke(); ctx.filter = 'none';
+
+    // Ruta principal
+    ctx.beginPath();
+    ROUTE.forEach(([lon,lat],i) => {
+      const x=tx(lon), y=ty(lat);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = '#FF4500';
+    ctx.lineWidth = 3; ctx.stroke();
+
+    // Waypoint markers
+    WP.forEach(wp => {
+      const x=tx(wp.lon), y=ty(wp.lat);
+      // Glow
+      ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(255,69,0,0.2)'; ctx.fill();
+      // Pin
+      ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+      ctx.fillStyle = wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+      // Número
+      ctx.fillStyle='#fff'; ctx.font='bold 8px sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(wp.id,x,y);
+    });
+
+    // Labels clave
+    ctx.fillStyle='rgba(242,237,228,0.6)';
+    ctx.font='10px Barlow Condensed,sans-serif';
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    [WP[0],WP[3],WP[7]].forEach(wp=>{
+      ctx.fillText(wp.name, tx(wp.lon)+10, ty(wp.lat));
+    });
+  }
+
+  window.addEventListener('resize', draw);
+  // Esperar a que el DOM esté listo
+  setTimeout(draw, 100);
+
+  // Hover effect
+  const overlay = document.getElementById('preview-overlay');
+  const preview = document.getElementById('map-preview');
+  if(preview && overlay){
+    preview.addEventListener('mouseenter',()=>overlay.style.background='rgba(8,8,8,0.2)');
+    preview.addEventListener('mouseleave',()=>overlay.style.background='rgba(8,8,8,0.35)');
+  }
+})();
+
+// ══════════════════════════════════════════
+// FULLSCREEN MAP — Leaflet + OSM (sin token)
+// ══════════════════════════════════════════
+let lmap = null, lGpsOn = false, lGpsWatch = null;
+let lUserMarker = null, lFollowMode = true, lVisited = new Set();
+let lRouteLine = null;
+
+const TILE_LAYERS = {
+  topo: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 };
-let map, mapReady=false;
+let currentTileLayer = null;
 
-// Marcador de posición — punto azul con pulso tipo app
-let userDot=null, userAccCircle=null, userHeadingLine=null;
-let followMode=true; // sigue la posición automáticamente
-let lastPos=null;
-let lastHeading=null;
+window.openFullscreenMap = function(){
+  document.getElementById('map-fullscreen').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if(!lmap) initLeafletMap();
+  else setTimeout(()=>lmap.invalidateSize(),100);
+};
 
-function buildUserMarker(){
-  // Contenedor del marcador de posición actual
-  const el=document.createElement('div');
-  el.id='user-marker';
-  el.style.cssText=`
-    width:20px;height:20px;position:relative;
-    display:flex;align-items:center;justify-content:center;
-  `;
-  // Pulso exterior
-  const pulse=document.createElement('div');
-  pulse.style.cssText=`
-    position:absolute;width:40px;height:40px;border-radius:50%;
-    background:rgba(66,133,244,.15);border:1.5px solid rgba(66,133,244,.4);
-    animation:userPulse 2s infinite;
-  `;
-  // Punto interior
-  const dot=document.createElement('div');
-  dot.style.cssText=`
-    width:16px;height:16px;border-radius:50%;
-    background:#4285F4;border:3px solid #fff;
-    box-shadow:0 0 12px rgba(66,133,244,.8);
-    position:relative;z-index:2;
-  `;
-  // Triángulo de dirección
-  const arrow=document.createElement('div');
-  arrow.id='user-arrow';
-  arrow.style.cssText=`
-    position:absolute;top:-10px;left:50%;
-    transform:translateX(-50%);
-    width:0;height:0;
-    border-left:5px solid transparent;
-    border-right:5px solid transparent;
-    border-bottom:10px solid #4285F4;
-    z-index:3;
-    transition:transform .3s;
-  `;
-  el.appendChild(pulse); el.appendChild(dot); el.appendChild(arrow);
+window.closeFullscreenMap = function(){
+  document.getElementById('map-fullscreen').classList.remove('open');
+  document.body.style.overflow = '';
+  if(lGpsOn) toggleFsGPS();
+};
 
-  if(!userDot){
-    userDot=new mapboxgl.Marker({element:el,anchor:'center'});
-  } else {
-    userDot.getElement().replaceWith(el);
-  }
-  return userDot;
-}
+function initLeafletMap(){
+  lmap = L.map('leaflet-map',{
+    center:[-32.6974,-71.3666],
+    zoom:12,
+    zoomControl:false,
+    attributionControl:false
+  });
 
-// Añadir keyframe de pulso al DOM
-const styleEl=document.createElement('style');
-styleEl.textContent=`
-  @keyframes userPulse{
-    0%{transform:scale(1);opacity:.8;}
-    50%{transform:scale(1.6);opacity:.2;}
-    100%{transform:scale(1);opacity:.8;}
-  }
-`;
-document.head.appendChild(styleEl);
+  // Tile layer topo por defecto
+  currentTileLayer = L.tileLayer(TILE_LAYERS.topo,{
+    maxZoom:17,
+    attribution:'© OpenTopoMap'
+  }).addTo(lmap);
 
-function addMapLayers(){
-  if(map.getSource('route')) return;
+  // Ruta
+  const routeLatLngs = ROUTE.map(([lon,lat])=>[lat,lon]);
+  lRouteLine = L.polyline(routeLatLngs,{
+    color:'#FF4500', weight:4, opacity:0.95
+  }).addTo(lmap);
 
-  // Círculo de accuracy del GPS
-  map.addSource('accuracy',{type:'geojson',data:{type:'Feature',geometry:{type:'Point',coordinates:[-71.3666,-32.6974]}}});
-  map.addLayer({id:'accuracy-circle',type:'circle',source:'accuracy',paint:{
-    'circle-radius':['interpolate',['exponential',2],['zoom'],10,20,15,80],
-    'circle-color':'rgba(66,133,244,0.1)',
-    'circle-stroke-width':1,
-    'circle-stroke-color':'rgba(66,133,244,0.3)'
-  }});
+  // Glow de ruta (segunda polyline más gruesa y transparente)
+  L.polyline(routeLatLngs,{
+    color:'#FF4500', weight:18, opacity:0.15
+  }).addTo(lmap);
 
-  // Ruta completada (gris — va detrás)
-  map.addSource('route-done',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[ROUTE[0]]}}});
-  map.addLayer({id:'route-done-line',type:'line',source:'route-done',paint:{
-    'line-color':'rgba(255,255,255,0.25)',
-    'line-width':4,
-    'line-cap':'round'
-  }});
-
-  // Ruta completa — glow
-  map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
-  map.addLayer({id:'route-glow',type:'line',source:'route',paint:{
-    'line-color':'#FF4500','line-width':16,'line-opacity':.18,'line-blur':10
-  }});
-  // Ruta completa — línea
-  map.addLayer({id:'route-line',type:'line',source:'route',paint:{
-    'line-color':'#FF4500','line-width':3.5,'line-opacity':.95
-  },layout:{'line-cap':'round','line-join':'round'}});
+  // Fit a la ruta
+  lmap.fitBounds(lRouteLine.getBounds(), {padding:[40,40]});
 
   // Waypoint markers
   WP.forEach(wp=>{
-    const el=document.createElement('div');
-    el.className='wp-pin'+(wp.type==='summit'?' summit':wp.type==='startend'?' startend':'');
-    el.innerHTML=`<span class="wp-pin-label">${wp.name}</span>${wp.id}`;
-    el.addEventListener('click',()=>openPanel(wp));
-    new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([wp.lon,wp.lat]).addTo(map);
+    const color = wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="width:28px;height:28px;background:${color};clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:#000;box-shadow:0 0 12px ${color}88;cursor:pointer;"><span style="font-family:sans-serif;font-weight:bold;font-size:11px;">${wp.id}</span></div>`,
+      iconSize:[28,28], iconAnchor:[14,14]
+    });
+    L.marker([wp.lat,wp.lon],{icon})
+      .addTo(lmap)
+      .on('click',()=>openFsPanel(wp));
+  });
+
+  // Stop propagation al arrastrar
+  lmap.on('dragstart',()=>{
+    lFollowMode=false;
+    const b=document.getElementById('fs-follow-btn');
+    if(b){b.textContent='⊙ Seguirme';b.style.color='var(--grey)';b.style.borderColor='var(--border)';}
   });
 }
 
-try{
-  map=new mapboxgl.Map({
-    container:'mapbox-map',
-    style:MAP_STYLES.satellite,
-    center:[-71.3666,-32.6974],
-    zoom:12,
-    pitch:55,
-    bearing:-15,
-    antialias:true
-  });
-  window.mapInstance=map;
-
-  map.on('load',()=>{
-    mapReady=true;
-    // Terreno 3D
-    map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
-    map.setTerrain({source:'mapbox-dem',exaggeration:2.5});
-    // Atmósfera
-    map.setFog({'range':[.5,14],'color':'#0d0800','high-color':'#1a0e00','space-color':'#000','star-intensity':.8,'horizon-blend':0.04});
-    addMapLayers();
-  });
-
-  // Si el usuario mueve el mapa manualmente → desactiva follow mode
-  map.on('dragstart',()=>{
-    followMode=false;
-    const btn=document.getElementById('follow-btn');
-    if(btn){btn.classList.remove('on');btn.textContent='⊙ Seguirme';}
-  });
-
-  map.on('error',()=>showCanvasMap());
-}catch(e){showCanvasMap();}
-
-window.setMapStyle=function(btn){
-  document.querySelectorAll('.mstyle').forEach(b=>b.classList.remove('on'));
+window.setLeafletStyle = function(btn){
+  document.querySelectorAll('[data-ls]').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  if(!map)return;
-  map.setStyle(MAP_STYLES[btn.dataset.s]);
-  map.once('styledata',()=>{
-    if(!map.getSource('mapbox-dem')){map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});map.setTerrain({source:'mapbox-dem',exaggeration:2.2});}
-    addMapLayers();
-  });
+  if(!lmap) return;
+  if(currentTileLayer) lmap.removeLayer(currentTileLayer);
+  currentTileLayer = L.tileLayer(TILE_LAYERS[btn.dataset.ls],{maxZoom:17}).addTo(lmap);
+  // Asegura que ruta quede encima
+  if(lRouteLine) lRouteLine.bringToFront();
 };
-window.mapZoom=function(d){if(map)map.zoomTo(map.getZoom()+d,{duration:300});};
 
-function showCanvasMap(){
-  document.getElementById('mapbox-map').style.display='none';
-  const c=document.getElementById('canvas-map');c.style.display='block';
-  c.width=c.offsetWidth;c.height=c.offsetHeight;
-  const ctx=c.getContext('2d'),W=c.width,H=c.height;
-  const mnLon=-71.415,mxLon=-71.32,mnLat=-32.725,mxLat=-32.668;
-  const tx=lon=>(lon-mnLon)/(mxLon-mnLon)*W;
-  const ty=lat=>(1-(lat-mnLat)/(mxLat-mnLat))*H;
-  ctx.fillStyle='#0d1a0d';ctx.fillRect(0,0,W,H);
-  for(let i=0;i<16;i++){ctx.strokeStyle='rgba(30,60,30,.3)';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,i/16*H);ctx.lineTo(W,i/16*H);ctx.stroke();ctx.beginPath();ctx.moveTo(i/16*W,0);ctx.lineTo(i/16*W,H);ctx.stroke();}
-  ctx.beginPath();ROUTE.forEach(([lon,lat],i)=>i?ctx.lineTo(tx(lon),ty(lat)):ctx.moveTo(tx(lon),ty(lat)));
-  ctx.strokeStyle='rgba(255,69,0,.25)';ctx.lineWidth=10;ctx.lineJoin='round';ctx.stroke();
-  ctx.beginPath();ROUTE.forEach(([lon,lat],i)=>i?ctx.lineTo(tx(lon),ty(lat)):ctx.moveTo(tx(lon),ty(lat)));
-  ctx.strokeStyle='#FF4500';ctx.lineWidth=2.5;ctx.stroke();
-  WP.forEach(wp=>{
-    const x=tx(wp.lon),y=ty(wp.lat);
-    ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);
-    ctx.fillStyle=wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';ctx.fill();
-    ctx.fillStyle='#000';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(wp.id,x,y);
-    ctx.fillStyle='#f2ede4';ctx.font='10px Barlow Condensed,sans-serif';ctx.textAlign='left';ctx.fillText(wp.name,x+13,y-7);
-  });
-  c.addEventListener('click',e=>{const r=c.getBoundingClientRect(),cx=e.clientX-r.left,cy=e.clientY-r.top;WP.forEach(wp=>{if(Math.hypot(cx-tx(wp.lon),cy-ty(wp.lat))<22)openPanel(wp);});});
-}
-
-// PANEL
-let activeWP=null;
-function openPanel(wp){
-  activeWP=wp.id;
-  document.getElementById('wpp-num').textContent=`Waypoint ${wp.id} / 9`;
-  document.getElementById('wpp-body').innerHTML=`
+function openFsPanel(wp){
+  document.getElementById('fs-wpp-num').textContent=`Waypoint ${wp.id} / 9`;
+  document.getElementById('fs-wpp-body').innerHTML=`
     <div class="wpp-name">${wp.name}</div>
     <div class="wpp-sub">${wp.sub}</div>
     <div class="wpp-divider"></div>
     <p class="wpp-desc">${wp.desc}</p>
     <div class="wpp-grid">${wp.specs.map(([v,k],i)=>`<div class="wpp-spec${i<2?' accent':''}"><div class="wpp-spec-val">${v}</div><div class="wpp-spec-key">${k}</div></div>`).join('')}</div>
     <div class="wpp-alert"><div class="wpp-alert-t">${wp.alert.t}</div><div class="wpp-alert-b">${wp.alert.b}</div></div>
-    <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);">
-      🏁 Navegar hacia la meta
-    </div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--orange);margin-bottom:10px;letter-spacing:.1em;">
-      Caballito de Palo — Punto de llegada
-    </div>
+    <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);">🏁 Navegar hacia la meta</div>
     <div class="nav-btns">
       <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=-32.69584,-71.40572&travelmode=driving" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -982,160 +851,92 @@ function openPanel(wp){
         Waze
       </a>
     </div>
-    <div class="wpp-coords" style="margin-top:12px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m snm</div>`;
-  document.getElementById('wp-panel').classList.add('open');
-  if(map&&mapReady)map.flyTo({center:[wp.lon,wp.lat],zoom:14.5,pitch:58,bearing:-20,duration:1200});
+    <div class="wpp-coords" style="margin-top:12px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m</div>`;
+  document.getElementById('wp-panel-fs').style.transform='translateX(0)';
+  if(lmap) lmap.flyTo([wp.lat,wp.lon],14,{animate:true,duration:1});
 }
-window.closePanel=()=>{document.getElementById('wp-panel').classList.remove('open');activeWP=null;};
 
-// WP LIST
-(function(){
-  const grid=document.getElementById('wp-list-grid');
-  WP.forEach(wp=>{
-    const card=document.createElement('div');
-    card.className='wl-card';
-    card.innerHTML=`<div class="wl-idx">${String(wp.id).padStart(2,'0')}</div><div class="wl-name">${wp.name}</div><div class="wl-ele">⬢ ${wp.ele}m · ${wp.km} km</div><div class="wl-desc">${wp.sub}</div>`;
-    card.onclick=()=>{document.getElementById('map-section').scrollIntoView({behavior:'smooth'});setTimeout(()=>openPanel(wp),700);};
-    grid.appendChild(card);
-  });
-})();
+window.closeFsPanel = function(){
+  document.getElementById('wp-panel-fs').style.transform='translateX(100%)';
+};
 
-// ══════════════════════════════════════════
-// GPS — NAVEGACIÓN EN TIEMPO REAL
-// ══════════════════════════════════════════
-let gpsOn=false, gpsWatch=null;
-let visitedWP=new Set();
-
-window.toggleGPS=function(){
-  if(!gpsOn){
-    if(!navigator.geolocation){toast('GPS no disponible en este dispositivo');return;}
-    gpsOn=true;
-    followMode=true;
-    document.getElementById('gps-dot').classList.add('on');
-    document.getElementById('gps-label').textContent='GPS Activo';
-    document.getElementById('gps-btn').classList.add('active');
-    toast('📡 GPS activado — navegando ruta');
-    const hud=document.getElementById('nav-hud');
+// ── GPS Fullscreen
+window.toggleFsGPS = function(){
+  if(!lGpsOn){
+    if(!navigator.geolocation){toast('GPS no disponible');return;}
+    lGpsOn=true;
+    const btn=document.getElementById('fs-gps-btn');
+    btn.classList.add('active');
+    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:#fff;animation:gpsPulse 1.5s infinite;flex-shrink:0;"></div> GPS Activo`;
+    lFollowMode=true;
+    document.getElementById('fs-follow-btn').textContent='⊙ Siguiendo';
+    document.getElementById('fs-follow-btn').style.color='#4285F4';
+    const hud=document.getElementById('fs-hud');
     if(hud) hud.style.display='flex';
+    toast('📡 GPS activado');
 
-    gpsWatch=navigator.geolocation.watchPosition(pos=>{
-      const{latitude:lat,longitude:lon,accuracy,heading}=pos.coords;
-      lastPos={lat,lon};
-      lastHeading=heading;
+    lGpsWatch = navigator.geolocation.watchPosition(pos=>{
+      const{latitude:lat,longitude:lon,accuracy}=pos.coords;
 
-      // Actualizar marcador de posición
-      if(map&&mapReady){
-        if(!userDot||!userDot._map){
-          buildUserMarker().setLngLat([lon,lat]).addTo(map);
-        } else {
-          userDot.setLngLat([lon,lat]);
-        }
-
-        // Rotar flecha de dirección si hay heading
-        if(heading!==null&&heading!==undefined){
-          const arrow=document.getElementById('user-arrow');
-          if(arrow) arrow.style.transform=`translateX(-50%) rotate(${heading}deg)`;
-        }
-
-        // Actualizar círculo de accuracy
-        if(map.getSource('accuracy')){
-          map.getSource('accuracy').setData({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{accuracy}});
-        }
-
-        // Follow mode — centrar mapa en posición con orientación
-        if(followMode){
-          map.easeTo({
-            center:[lon,lat],
-            zoom:14.5,
-            pitch:60,
-            bearing: heading||map.getBearing(),
-            duration:800,
-            easing:t=>t
-          });
-        }
-
-        // Actualizar tramo recorrido
-        updateRouteDone(lat,lon);
+      // Marcador de posición
+      if(!lUserMarker){
+        const icon=L.divIcon({
+          className:'',
+          html:`<div style="position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center;">
+            <div style="position:absolute;width:36px;height:36px;border-radius:50%;background:rgba(66,133,244,.15);border:1.5px solid rgba(66,133,244,.5);animation:userPulse 2s infinite;"></div>
+            <div style="width:14px;height:14px;border-radius:50%;background:#4285F4;border:2.5px solid #fff;box-shadow:0 0 10px rgba(66,133,244,.8);position:relative;z-index:2;"></div>
+          </div>`,
+          iconSize:[20,20], iconAnchor:[10,10]
+        });
+        lUserMarker = L.marker([lat,lon],{icon,zIndexOffset:1000}).addTo(lmap);
+      } else {
+        lUserMarker.setLatLng([lat,lon]);
       }
 
-      // Detectar proximidad a waypoints (150m)
+      if(lFollowMode) lmap.panTo([lat,lon],{animate:true,duration:0.5});
+
+      // Tramo recorrido
+      let minD=Infinity,minI=0;
+      ROUTE.forEach(([rl,rlat],i)=>{const d=Math.hypot(lat-rlat,lon-rl);if(d<minD){minD=d;minI=i;}});
+
+      // HUD
+      const dMeta=distKm(lat,lon,-32.69584,-71.40572);
+      const hud=document.getElementById('fs-hud');
+      if(hud) hud.innerHTML=`<span>📍 ±${Math.round(accuracy||0)}m</span><span>🏁 ${dMeta.toFixed(1)} km a meta</span>`;
+
+      // Checkpoints
       WP.forEach(wp=>{
-        const d=distKm(lat,lon,wp.lat,wp.lon);
-        if(d<0.15&&!visitedWP.has(wp.id)){
-          visitedWP.add(wp.id);
+        if(!lVisited.has(wp.id)&&distKm(lat,lon,wp.lat,wp.lon)<.15){
+          lVisited.add(wp.id);
           toast(`📍 WP${wp.id}: ${wp.name}`);
-          openPanel(wp);
+          openFsPanel(wp);
         }
       });
+    },()=>toast('⚠ Señal perdida — modo offline'),{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
 
-      // HUD de posición
-      updateHUD(lat,lon,accuracy);
-
-    },err=>{
-      console.warn('GPS error:',err);
-      toast('⚠ Señal GPS perdida — navegando offline');
-      // No desactivar — sigue intentando reconectar
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
-
-  }else{
-    gpsOn=false;
-    followMode=false;
-    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
-    document.getElementById('gps-dot').classList.remove('on');
-    document.getElementById('gps-label').textContent='Activar GPS';
-    document.getElementById('gps-btn').classList.remove('active');
-    toast('GPS desactivado');
-    const hud=document.getElementById('nav-hud');
+  } else {
+    lGpsOn=false;
+    if(lGpsWatch) navigator.geolocation.clearWatch(lGpsWatch);
+    const btn=document.getElementById('fs-gps-btn');
+    btn.classList.remove('active');
+    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.3);flex-shrink:0;"></div> Activar GPS`;
+    const hud=document.getElementById('fs-hud');
     if(hud) hud.style.display='none';
+    toast('GPS desactivado');
   }
 };
 
-// Follow mode toggle
-window.toggleFollow=function(){
-  followMode=!followMode;
-  const btn=document.getElementById('follow-btn');
-  if(followMode){
-    btn.classList.add('on');
-    btn.textContent='⊙ Siguiendo';
-    if(lastPos&&map&&mapReady){
-      map.easeTo({center:[lastPos.lon,lastPos.lat],zoom:14.5,pitch:60,duration:800});
-    }
+window.toggleFsFollow = function(){
+  lFollowMode=!lFollowMode;
+  const b=document.getElementById('fs-follow-btn');
+  if(lFollowMode){
+    b.textContent='⊙ Siguiendo'; b.style.color='#4285F4'; b.style.borderColor='#4285F4';
+    if(lUserMarker) lmap.panTo(lUserMarker.getLatLng());
     toast('🔵 Modo seguimiento activado');
   } else {
-    btn.classList.remove('on');
-    btn.textContent='⊙ Seguirme';
-    toast('Modo libre — arrastra el mapa');
+    b.textContent='⊙ Seguirme'; b.style.color='var(--grey)'; b.style.borderColor='var(--border)';
   }
 };
-
-// Tramo recorrido — colorea la ruta ya pasada
-function updateRouteDone(lat,lon){
-  if(!map||!map.getSource('route-done')) return;
-  // Encontrar el punto más cercano de la ruta
-  let minD=Infinity, minIdx=0;
-  ROUTE.forEach(([rlon,rlat],i)=>{
-    const d=Math.hypot(lat-rlat,lon-rlon);
-    if(d<minD){minD=d;minIdx=i;}
-  });
-  if(minIdx>1){
-    map.getSource('route-done').setData({
-      type:'Feature',
-      geometry:{type:'LineString',coordinates:ROUTE.slice(0,minIdx+1)}
-    });
-  }
-}
-
-// HUD — info en tiempo real sobre el mapa
-function updateHUD(lat,lon,acc){
-  let hud=document.getElementById('nav-hud');
-  if(!hud) return;
-  // Distancia a la meta (Caballito de Palo)
-  const dMeta=distKm(lat,lon,-32.69584,-71.40572);
-  hud.innerHTML=`
-    <span>📍 Precisión: ${Math.round(acc||0)}m</span>
-    <span>🏁 Meta: ${dMeta.toFixed(1)} km</span>
-  `;
-}
 
 function distKm(la1,lo1,la2,lo2){
   const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
@@ -1143,6 +944,23 @@ function distKm(la1,lo1,la2,lo2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+// WP LIST (desde cards — abre panel fullscreen)
+(function(){
+  const grid=document.getElementById('wp-list-grid');
+  WP.forEach(wp=>{
+    const card=document.createElement('div');
+    card.className='wl-card';
+    card.innerHTML=`<div class="wl-idx">${String(wp.id).padStart(2,'0')}</div><div class="wl-name">${wp.name}</div><div class="wl-ele">⬢ ${wp.ele}m · ${wp.km} km</div><div class="wl-desc">${wp.sub}</div>`;
+    card.onclick=()=>{
+      openFullscreenMap();
+      setTimeout(()=>openFsPanel(wp),800);
+    };
+    grid.appendChild(card);
+  });
+})();
+    document.getElementById('gps-dot').classList.remove('on');
+    document.getElementById('gps-label').textContent='Activar GPS';
+    document.getElementById('gps-btn').classList.remove('active');
 // SHARE
 window.doShare=function(){if(navigator.share){navigator.share({title:'Paseo Promobility — Cordillera de la Costa',text:'25.9 km · 655m snm · 9 waypoints · V Región',url:location.href});}else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copiado'));}};
 
