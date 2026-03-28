@@ -91,6 +91,7 @@ body{background:var(--black);color:var(--white);font-family:'Barlow',sans-serif;
 .map-styles{position:absolute;bottom:16px;left:16px;display:flex;gap:6px;pointer-events:all;}
 .mstyle{background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:7px 12px;cursor:pointer;transition:all .2s;}
 .mstyle:hover,.mstyle.on{border-color:var(--orange);color:var(--orange);}
+#follow-btn.on{border-color:#4285F4;color:#4285F4;}
 .map-zoom{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;pointer-events:all;}
 .mzoom{width:32px;height:32px;background:rgba(8,8,8,.88);border:1px solid var(--border);color:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
 .mzoom:hover{border-color:var(--orange);}
@@ -227,6 +228,25 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
       <a href="#map-section" class="btn btn-primary">▶ Ver ruta</a>
       <a href="#brand-section" class="btn btn-ghost">Para marcas</a>
     </div>
+    <div style="margin-top:20px;opacity:0;animation:fadeUp .8s .85s forwards;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.35em;text-transform:uppercase;color:var(--grey);margin-bottom:10px;">📍 Llegar al punto de inicio — Caballito de Palo</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=-32.69584,-71.40572&travelmode=driving" target="_blank"
+           style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:transparent;border:1px solid rgba(66,133,244,.5);color:#4285F4;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;transition:all .2s;"
+           onmouseover="this.style.borderColor='#4285F4';this.style.background='rgba(66,133,244,.08)'"
+           onmouseout="this.style.borderColor='rgba(66,133,244,.5)';this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          Google Maps
+        </a>
+        <a href="https://waze.com/ul?ll=-32.69584,-71.40572&navigate=yes" target="_blank"
+           style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:transparent;border:1px solid rgba(99,209,247,.5);color:#63D1F7;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;transition:all .2s;"
+           onmouseover="this.style.borderColor='#63D1F7';this.style.background='rgba(99,209,247,.08)'"
+           onmouseout="this.style.borderColor='rgba(99,209,247,.5)';this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
+          Waze
+        </a>
+      </div>
+    </div>
   </div>
   <div class="scroll-hint">
     <div class="scroll-line"></div>
@@ -272,6 +292,17 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
         <button class="mstyle" data-s="terrain" onclick="setMapStyle(this)">Terreno</button>
         <button class="mstyle" data-s="dark" onclick="setMapStyle(this)">Oscuro</button>
       </div>
+      <!-- Follow mode button -->
+      <button id="follow-btn" onclick="toggleFollow()"
+        style="position:absolute;bottom:52px;right:16px;background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:8px 14px;cursor:pointer;transition:all .2s;pointer-events:all;">
+        ⊙ Seguirme
+      </button>
+
+      <!-- HUD navegación -->
+      <div id="nav-hud"
+        style="position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(8,8,8,.82);backdrop-filter:blur(10px);border:1px solid var(--border);padding:8px 16px;display:none;gap:20px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.15em;color:var(--white);pointer-events:none;white-space:nowrap;">
+      </div>
+
       <div id="wp-panel">
         <div class="wpp-header">
           <span class="wpp-num" id="wpp-num"></span>
@@ -477,17 +508,111 @@ const ELEV=[[0,101],[3,130],[6,165],[9,210],[12,255],[15,305],[18,365],[21,425],
   window.addEventListener('resize',draw); draw();
 })();
 
-// MAP
+// ══════════════════════════════════════════
+// MAP — NAVEGACIÓN APP
+// ══════════════════════════════════════════
 mapboxgl.accessToken='pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcTF3bXAifQ.rJcFIG214AriISLbB4io9A';
-const MAP_STYLES={satellite:'mapbox://styles/mapbox/satellite-streets-v12',terrain:'mapbox://styles/mapbox/outdoors-v12',dark:'mapbox://styles/mapbox/dark-v11'};
-let map,mapReady=false,userMarker=null;
+const MAP_STYLES={
+  satellite:'mapbox://styles/mapbox/satellite-streets-v12',
+  terrain:'mapbox://styles/mapbox/outdoors-v12',
+  dark:'mapbox://styles/mapbox/dark-v11'
+};
+let map, mapReady=false;
+
+// Marcador de posición — punto azul con pulso tipo app
+let userDot=null, userAccCircle=null, userHeadingLine=null;
+let followMode=true; // sigue la posición automáticamente
+let lastPos=null;
+let lastHeading=null;
+
+function buildUserMarker(){
+  // Contenedor del marcador de posición actual
+  const el=document.createElement('div');
+  el.id='user-marker';
+  el.style.cssText=`
+    width:20px;height:20px;position:relative;
+    display:flex;align-items:center;justify-content:center;
+  `;
+  // Pulso exterior
+  const pulse=document.createElement('div');
+  pulse.style.cssText=`
+    position:absolute;width:40px;height:40px;border-radius:50%;
+    background:rgba(66,133,244,.15);border:1.5px solid rgba(66,133,244,.4);
+    animation:userPulse 2s infinite;
+  `;
+  // Punto interior
+  const dot=document.createElement('div');
+  dot.style.cssText=`
+    width:16px;height:16px;border-radius:50%;
+    background:#4285F4;border:3px solid #fff;
+    box-shadow:0 0 12px rgba(66,133,244,.8);
+    position:relative;z-index:2;
+  `;
+  // Triángulo de dirección
+  const arrow=document.createElement('div');
+  arrow.id='user-arrow';
+  arrow.style.cssText=`
+    position:absolute;top:-10px;left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-bottom:10px solid #4285F4;
+    z-index:3;
+    transition:transform .3s;
+  `;
+  el.appendChild(pulse); el.appendChild(dot); el.appendChild(arrow);
+
+  if(!userDot){
+    userDot=new mapboxgl.Marker({element:el,anchor:'center'});
+  } else {
+    userDot.getElement().replaceWith(el);
+  }
+  return userDot;
+}
+
+// Añadir keyframe de pulso al DOM
+const styleEl=document.createElement('style');
+styleEl.textContent=`
+  @keyframes userPulse{
+    0%{transform:scale(1);opacity:.8;}
+    50%{transform:scale(1.6);opacity:.2;}
+    100%{transform:scale(1);opacity:.8;}
+  }
+`;
+document.head.appendChild(styleEl);
 
 function addMapLayers(){
-  if(!map.getSource('route')){
-    map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
-    map.addLayer({id:'route-glow',type:'line',source:'route',paint:{'line-color':'#FF4500','line-width':14,'line-opacity':.2,'line-blur':8}});
-    map.addLayer({id:'route-line',type:'line',source:'route',paint:{'line-color':'#FF4500','line-width':3,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});
-  }
+  if(map.getSource('route')) return;
+
+  // Círculo de accuracy del GPS
+  map.addSource('accuracy',{type:'geojson',data:{type:'Feature',geometry:{type:'Point',coordinates:[-71.3666,-32.6974]}}});
+  map.addLayer({id:'accuracy-circle',type:'circle',source:'accuracy',paint:{
+    'circle-radius':['interpolate',['exponential',2],['zoom'],10,20,15,80],
+    'circle-color':'rgba(66,133,244,0.1)',
+    'circle-stroke-width':1,
+    'circle-stroke-color':'rgba(66,133,244,0.3)'
+  }});
+
+  // Ruta completada (gris — va detrás)
+  map.addSource('route-done',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[ROUTE[0]]}}});
+  map.addLayer({id:'route-done-line',type:'line',source:'route-done',paint:{
+    'line-color':'rgba(255,255,255,0.25)',
+    'line-width':4,
+    'line-cap':'round'
+  }});
+
+  // Ruta completa — glow
+  map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
+  map.addLayer({id:'route-glow',type:'line',source:'route',paint:{
+    'line-color':'#FF4500','line-width':16,'line-opacity':.18,'line-blur':10
+  }});
+  // Ruta completa — línea
+  map.addLayer({id:'route-line',type:'line',source:'route',paint:{
+    'line-color':'#FF4500','line-width':3.5,'line-opacity':.95
+  },layout:{'line-cap':'round','line-join':'round'}});
+
+  // Waypoint markers
   WP.forEach(wp=>{
     const el=document.createElement('div');
     el.className='wp-pin'+(wp.type==='summit'?' summit':wp.type==='startend'?' startend':'');
@@ -498,16 +623,35 @@ function addMapLayers(){
 }
 
 try{
-  map=new mapboxgl.Map({container:'mapbox-map',style:MAP_STYLES.satellite,center:[-71.3666,-32.6974],zoom:11.5,pitch:52,bearing:-15,antialias:true});
+  map=new mapboxgl.Map({
+    container:'mapbox-map',
+    style:MAP_STYLES.satellite,
+    center:[-71.3666,-32.6974],
+    zoom:12,
+    pitch:55,
+    bearing:-15,
+    antialias:true
+  });
   window.mapInstance=map;
+
   map.on('load',()=>{
     mapReady=true;
+    // Terreno 3D
     map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
-    map.setTerrain({source:'mapbox-dem',exaggeration:2.2});
-    map.setFog({'range':[.5,12],'color':'#100800','high-color':'#2a1200','space-color':'#000','star-intensity':.7});
+    map.setTerrain({source:'mapbox-dem',exaggeration:2.5});
+    // Atmósfera
+    map.setFog({'range':[.5,14],'color':'#0d0800','high-color':'#1a0e00','space-color':'#000','star-intensity':.8,'horizon-blend':0.04});
     addMapLayers();
   });
-  map.on('error',showCanvasMap);
+
+  // Si el usuario mueve el mapa manualmente → desactiva follow mode
+  map.on('dragstart',()=>{
+    followMode=false;
+    const btn=document.getElementById('follow-btn');
+    if(btn){btn.classList.remove('on');btn.textContent='⊙ Seguirme';}
+  });
+
+  map.on('error',()=>showCanvasMap());
 }catch(e){showCanvasMap();}
 
 window.setMapStyle=function(btn){
@@ -558,17 +702,23 @@ function openPanel(wp){
     <p class="wpp-desc">${wp.desc}</p>
     <div class="wpp-grid">${wp.specs.map(([v,k],i)=>`<div class="wpp-spec${i<2?' accent':''}"><div class="wpp-spec-val">${v}</div><div class="wpp-spec-key">${k}</div></div>`).join('')}</div>
     <div class="wpp-alert"><div class="wpp-alert-t">${wp.alert.t}</div><div class="wpp-alert-b">${wp.alert.b}</div></div>
+    <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);">
+      🏁 Navegar hacia la meta
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--orange);margin-bottom:10px;letter-spacing:.1em;">
+      Caballito de Palo — Punto de llegada
+    </div>
     <div class="nav-btns">
-      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=${wp.lat},${wp.lon}&travelmode=driving" target="_blank">
+      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=-32.69584,-71.40572&travelmode=driving" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
         Google Maps
       </a>
-      <a class="nav-btn waze" href="https://waze.com/ul?ll=${wp.lat},${wp.lon}&navigate=yes" target="_blank">
+      <a class="nav-btn waze" href="https://waze.com/ul?ll=-32.69584,-71.40572&navigate=yes" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
         Waze
       </a>
     </div>
-    <div class="wpp-coords" style="margin-top:10px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m snm</div>`;
+    <div class="wpp-coords" style="margin-top:12px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m snm</div>`;
   document.getElementById('wp-panel').classList.add('open');
   if(map&&mapReady)map.flyTo({center:[wp.lon,wp.lat],zoom:14.5,pitch:58,bearing:-20,duration:1200});
 }
@@ -586,33 +736,148 @@ window.closePanel=()=>{document.getElementById('wp-panel').classList.remove('ope
   });
 })();
 
-// GPS
-let gpsOn=false,gpsWatch=null;
+// ══════════════════════════════════════════
+// GPS — NAVEGACIÓN EN TIEMPO REAL
+// ══════════════════════════════════════════
+let gpsOn=false, gpsWatch=null;
+let visitedWP=new Set();
+
 window.toggleGPS=function(){
   if(!gpsOn){
-    if(!navigator.geolocation){toast('GPS no disponible');return;}
+    if(!navigator.geolocation){toast('GPS no disponible en este dispositivo');return;}
     gpsOn=true;
+    followMode=true;
     document.getElementById('gps-dot').classList.add('on');
     document.getElementById('gps-label').textContent='GPS Activo';
     document.getElementById('gps-btn').classList.add('active');
-    toast('📡 GPS activado');
+    toast('📡 GPS activado — navegando ruta');
+    const hud=document.getElementById('nav-hud');
+    if(hud) hud.style.display='flex';
+
     gpsWatch=navigator.geolocation.watchPosition(pos=>{
-      const{latitude:lat,longitude:lon}=pos.coords;
+      const{latitude:lat,longitude:lon,accuracy,heading}=pos.coords;
+      lastPos={lat,lon};
+      lastHeading=heading;
+
+      // Actualizar marcador de posición
       if(map&&mapReady){
-        if(!userMarker){const el=document.createElement('div');el.style.cssText='width:14px;height:14px;background:#4CAF50;border-radius:50%;border:3px solid #fff;box-shadow:0 0 16px rgba(76,175,80,.9);';userMarker=new mapboxgl.Marker({element:el}).setLngLat([lon,lat]).addTo(map);map.flyTo({center:[lon,lat],zoom:14});}
-        else userMarker.setLngLat([lon,lat]);
+        if(!userDot||!userDot._map){
+          buildUserMarker().setLngLat([lon,lat]).addTo(map);
+        } else {
+          userDot.setLngLat([lon,lat]);
+        }
+
+        // Rotar flecha de dirección si hay heading
+        if(heading!==null&&heading!==undefined){
+          const arrow=document.getElementById('user-arrow');
+          if(arrow) arrow.style.transform=`translateX(-50%) rotate(${heading}deg)`;
+        }
+
+        // Actualizar círculo de accuracy
+        if(map.getSource('accuracy')){
+          map.getSource('accuracy').setData({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{accuracy}});
+        }
+
+        // Follow mode — centrar mapa en posición con orientación
+        if(followMode){
+          map.easeTo({
+            center:[lon,lat],
+            zoom:14.5,
+            pitch:60,
+            bearing: heading||map.getBearing(),
+            duration:800,
+            easing:t=>t
+          });
+        }
+
+        // Actualizar tramo recorrido
+        updateRouteDone(lat,lon);
       }
-      WP.forEach(wp=>{if(activeWP!==wp.id&&distKm(lat,lon,wp.lat,wp.lon)<.15){toast(`📍 WP${wp.id}: ${wp.name}`);openPanel(wp);}});
-    },()=>toast('Error al acceder al GPS'),{enableHighAccuracy:true,timeout:10000,maximumAge:5000});
+
+      // Detectar proximidad a waypoints (150m)
+      WP.forEach(wp=>{
+        const d=distKm(lat,lon,wp.lat,wp.lon);
+        if(d<0.15&&!visitedWP.has(wp.id)){
+          visitedWP.add(wp.id);
+          toast(`📍 WP${wp.id}: ${wp.name}`);
+          openPanel(wp);
+        }
+      });
+
+      // HUD de posición
+      updateHUD(lat,lon,accuracy);
+
+    },err=>{
+      console.warn('GPS error:',err);
+      toast('⚠ Señal GPS perdida — navegando offline');
+      // No desactivar — sigue intentando reconectar
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
+
   }else{
-    gpsOn=false;if(gpsWatch)navigator.geolocation.clearWatch(gpsWatch);
+    gpsOn=false;
+    followMode=false;
+    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
     document.getElementById('gps-dot').classList.remove('on');
     document.getElementById('gps-label').textContent='Activar GPS';
     document.getElementById('gps-btn').classList.remove('active');
     toast('GPS desactivado');
+    const hud=document.getElementById('nav-hud');
+    if(hud) hud.style.display='none';
   }
 };
-function distKm(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
+// Follow mode toggle
+window.toggleFollow=function(){
+  followMode=!followMode;
+  const btn=document.getElementById('follow-btn');
+  if(followMode){
+    btn.classList.add('on');
+    btn.textContent='⊙ Siguiendo';
+    if(lastPos&&map&&mapReady){
+      map.easeTo({center:[lastPos.lon,lastPos.lat],zoom:14.5,pitch:60,duration:800});
+    }
+    toast('🔵 Modo seguimiento activado');
+  } else {
+    btn.classList.remove('on');
+    btn.textContent='⊙ Seguirme';
+    toast('Modo libre — arrastra el mapa');
+  }
+};
+
+// Tramo recorrido — colorea la ruta ya pasada
+function updateRouteDone(lat,lon){
+  if(!map||!map.getSource('route-done')) return;
+  // Encontrar el punto más cercano de la ruta
+  let minD=Infinity, minIdx=0;
+  ROUTE.forEach(([rlon,rlat],i)=>{
+    const d=Math.hypot(lat-rlat,lon-rlon);
+    if(d<minD){minD=d;minIdx=i;}
+  });
+  if(minIdx>1){
+    map.getSource('route-done').setData({
+      type:'Feature',
+      geometry:{type:'LineString',coordinates:ROUTE.slice(0,minIdx+1)}
+    });
+  }
+}
+
+// HUD — info en tiempo real sobre el mapa
+function updateHUD(lat,lon,acc){
+  let hud=document.getElementById('nav-hud');
+  if(!hud) return;
+  // Distancia a la meta (Caballito de Palo)
+  const dMeta=distKm(lat,lon,-32.69584,-71.40572);
+  hud.innerHTML=`
+    <span>📍 Precisión: ${Math.round(acc||0)}m</span>
+    <span>🏁 Meta: ${dMeta.toFixed(1)} km</span>
+  `;
+}
+
+function distKm(la1,lo1,la2,lo2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 
 // SHARE
 window.doShare=function(){if(navigator.share){navigator.share({title:'Paseo Promobility — Cordillera de la Costa',text:'25.9 km · 655m snm · 9 waypoints · V Región',url:location.href});}else{navigator.clipboard.writeText(location.href).then(()=>toast('🔗 Link copiado'));}};
