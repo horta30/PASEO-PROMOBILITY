@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mapa — Paseo Promobility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --black:#080808;--dark:#141414;--border:#2a2a2a;--grey:#666;
+  --orange:#FF4500;--orange2:#FF6B35;--amber:#FFB347;--green:#4CAF50;
+  --blue:#4285F4;--white:#F2EDE4;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--black);}
+body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-serif;}
+
+/* ── TOPBAR ── */
+#topbar{
+  flex-shrink:0;
+  background:rgba(8,8,8,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 16px;
+  height:52px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  z-index:1000;
+}
+.top-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--white);text-decoration:none;white-space:nowrap;}
+.top-logo span{color:var(--orange);}
+.top-stats{display:flex;gap:16px;flex:1;justify-content:center;}
+.tstat{display:flex;flex-direction:column;align-items:center;line-height:1;}
+.tstat-val{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--white);}
+.tstat-key{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);}
+.top-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+#gps-btn{
+  background:var(--orange);color:var(--black);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;
+  padding:8px 16px;border:none;cursor:pointer;
+  display:flex;align-items:center;gap:7px;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));
+  transition:background .2s;white-space:nowrap;
+}
+#gps-btn:hover{background:var(--orange2);}
+#gps-btn.active{background:var(--green);color:#fff;}
+.gps-dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.4);flex-shrink:0;}
+.gps-dot.on{background:#fff;animation:gpsPulse 1.5s infinite;}
+@keyframes gpsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.4);}50%{box-shadow:0 0 0 5px rgba(255,255,255,0);}}
+#back-btn{
+  background:transparent;border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:all .2s;
+  text-decoration:none;display:inline-block;white-space:nowrap;
+}
+#back-btn:hover{border-color:var(--orange);color:var(--orange);}
+
+/* ── HUD barra ── */
+#hud{
+  flex-shrink:0;
+  height:0;overflow:hidden;
+  background:rgba(66,133,244,.08);
+  border-bottom:1px solid rgba(66,133,244,.2);
+  display:flex;align-items:center;gap:20px;
+  padding:0 16px;
+  font-size:11px;letter-spacing:.15em;color:var(--white);
+  transition:height .3s;
+}
+#hud.show{height:34px;overflow:visible;}
+
+/* ── MAPA ── */
+#map{flex:1;position:relative;}
+#leaflet-map{position:absolute;inset:0;width:100%;height:100%;}
+
+/* ── CONTROLES SOBRE MAPA ── */
+.map-controls{position:absolute;z-index:500;pointer-events:none;}
+.map-controls *{pointer-events:all;}
+
+#style-ctrl{bottom:24px;left:12px;}
+.style-ctrl{display:flex;gap:5px;}
+.sbtn{
+  background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  padding:7px 11px;cursor:pointer;transition:all .2s;
+}
+.sbtn:hover,.sbtn.on{border-color:var(--orange);color:var(--orange);}
+
+#follow-ctrl{bottom:66px;right:12px;}
+#follow-btn{
+  background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  padding:9px 14px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+#follow-btn:hover{border-color:var(--blue);color:var(--blue);}
+#follow-btn.on{border-color:var(--blue);color:var(--blue);}
+
+#zoom-ctrl{top:12px;right:12px;display:flex;flex-direction:column;gap:4px;}
+.zbtn{
+  width:32px;height:32px;
+  background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--white);
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s;
+}
+.zbtn:hover{border-color:var(--orange);}
+
+/* ── PANEL WAYPOINT ── */
+#wp-panel{
+  position:absolute;right:0;top:0;bottom:0;
+  width:min(300px,88vw);
+  background:rgba(8,8,8,.97);
+  backdrop-filter:blur(16px);
+  border-left:1px solid var(--border);
+  transform:translateX(100%);
+  transition:transform .38s cubic-bezier(.16,1,.3,1);
+  overflow-y:auto;z-index:600;
+  display:flex;flex-direction:column;
+}
+#wp-panel.open{transform:translateX(0);}
+.panel-top{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:rgba(8,8,8,.98);z-index:10;
+}
+.panel-num{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--orange);}
+.panel-close{
+  background:none;border:1px solid var(--border);color:var(--grey);
+  width:26px;height:26px;cursor:pointer;font-size:12px;transition:border-color .2s;
+}
+.panel-close:hover{border-color:var(--orange);color:var(--orange);}
+.panel-body{padding:18px;flex:1;}
+.p-name{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);margin-bottom:3px;}
+.p-sub{font-size:10px;letter-spacing:.2em;color:var(--orange);text-transform:uppercase;margin-bottom:14px;}
+.p-div{height:1px;background:var(--border);margin:13px 0;}
+.p-desc{font-size:13px;font-weight:300;line-height:1.7;color:rgba(242,237,228,.7);margin-bottom:16px;}
+.p-specs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:14px;}
+.p-spec{background:var(--dark);padding:9px 11px;border-left:2px solid var(--border);}
+.p-spec.hi{border-left-color:var(--orange);}
+.p-spec-val{font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1;color:var(--white);}
+.p-spec-key{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--orange);margin-top:2px;}
+.p-alert{padding:10px 12px;border-left:3px solid var(--amber);background:rgba(255,179,71,.06);margin-bottom:14px;}
+.p-alert-t{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:3px;}
+.p-alert-b{font-size:12px;font-weight:300;color:rgba(242,237,228,.65);line-height:1.5;}
+.p-meta-label{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--grey);margin-bottom:7px;}
+.p-meta-dest{font-size:12px;color:var(--orange);letter-spacing:.1em;margin-bottom:10px;}
+.nav-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.nav-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 8px;border:1px solid var(--border);background:var(--dark);
+  color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  text-decoration:none;cursor:pointer;transition:all .2s;
+}
+.nav-btn.gmaps:hover{border-color:var(--blue);color:var(--blue);}
+.nav-btn.waze:hover{border-color:#63D1F7;color:#63D1F7;}
+.p-coords{font-size:10px;letter-spacing:.1em;color:var(--border);}
+
+/* ── TOAST ── */
+#toast{
+  position:absolute;top:58px;left:50%;
+  transform:translateX(-50%) translateY(-60px);
+  background:var(--dark);border:1px solid var(--orange);
+  padding:9px 18px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--orange);z-index:800;
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+  white-space:nowrap;pointer-events:none;
+}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* leaflet overrides */
+.leaflet-control-zoom,.leaflet-control-attribution{display:none;}
+@keyframes userPulse{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.7);opacity:.15;}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <a href="index.html" id="back-btn">← Volver</a>
+  <div class="top-stats">
+    <div class="tstat"><span class="tstat-val">25.9</span><span class="tstat-key">km</span></div>
+    <div class="tstat"><span class="tstat-val">655</span><span class="tstat-key">msnm</span></div>
+    <div class="tstat"><span class="tstat-val">9</span><span class="tstat-key">wp</span></div>
+  </div>
+  <div class="top-actions">
+    <button id="gps-btn" onclick="toggleGPS()">
+      <div class="gps-dot" id="gps-dot"></div>
+      <span id="gps-label">GPS</span>
+    </button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <span id="hud-acc"></span>
+  <span id="hud-meta"></span>
+</div>
+
+<!-- MAPA -->
+<div id="map">
+  <div id="leaflet-map"></div>
+  <div id="toast"></div>
+
+  <!-- Controles -->
+  <div class="map-controls" id="style-ctrl">
+    <div class="style-ctrl">
+      <button class="sbtn on" data-l="topo" onclick="setStyle(this)">Topo</button>
+      <button class="sbtn" data-l="satellite" onclick="setStyle(this)">Satélite</button>
+      <button class="sbtn" data-l="osm" onclick="setStyle(this)">Calles</button>
+    </div>
+  </div>
+
+  <div class="map-controls" id="follow-ctrl">
+    <button id="follow-btn" class="on" onclick="toggleFollow()">⊙ Siguiendo</button>
+  </div>
+
+  <div class="map-controls" id="zoom-ctrl">
+    <button class="zbtn" onclick="lmap.zoomIn()">+</button>
+    <button class="zbtn" onclick="lmap.zoomOut()">−</button>
+  </div>
+
+  <!-- Panel waypoint -->
+  <div id="wp-panel">
+    <div class="panel-top">
+      <span class="panel-num" id="panel-num"></span>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+</div>
+
+<script src="assets/ruta.js"></script>
+<script>
+// ── MAPA LEAFLET
+const TILES = {
+  topo:      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  osm:       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+};
+
+const lmap = L.map('leaflet-map', {
+  center:[-32.6974,-71.3666], zoom:12,
+  zoomControl:false, attributionControl:false
+});
+
+let currentTile = L.tileLayer(TILES.topo, {maxZoom:18}).addTo(lmap);
+
+// Ruta — glow + línea
+const coords = PM.ruta.map(([lon,lat])=>[lat,lon]);
+L.polyline(coords, {color:'#FF4500', weight:18, opacity:.15}).addTo(lmap);
+const routeLine = L.polyline(coords, {color:'#FF4500', weight:4, opacity:.95}).addTo(lmap);
+lmap.fitBounds(routeLine.getBounds(), {padding:[30,30]});
+
+// Ruta recorrida
+const doneLine = L.polyline([[coords[0][0],coords[0][1]]], {color:'rgba(255,255,255,.25)', weight:4}).addTo(lmap);
+
+// Waypoint markers
+PM.waypoints.forEach(wp=>{
+  const col = wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="width:28px;height:28px;background:${col};clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px ${col}99;cursor:pointer;">
+      <span style="font-family:sans-serif;font-weight:bold;font-size:11px;color:#000;">${wp.id}</span>
+    </div>`,
+    iconSize:[28,28], iconAnchor:[14,14]
+  });
+  L.marker([wp.lat,wp.lon],{icon}).addTo(lmap).on('click',()=>openPanel(wp));
+});
+
+// Style switcher
+window.setStyle = function(btn){
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  lmap.removeLayer(currentTile);
+  currentTile = L.tileLayer(TILES[btn.dataset.l],{maxZoom:18}).addTo(lmap);
+  routeLine.bringToFront();
+  doneLine.bringToFront();
+};
+
+// ── GPS
+let gpsOn=false, gpsWatch=null, userMarker=null, followMode=true, visited=new Set();
+
+window.toggleGPS = function(){
+  if(!gpsOn){
+    if(!navigator.geolocation){toast('GPS no disponible');return;}
+    gpsOn=true;
+    document.getElementById('gps-dot').classList.add('on');
+    document.getElementById('gps-btn').classList.add('active');
+    document.getElementById('gps-label').textContent='GPS Activo';
+    document.getElementById('hud').classList.add('show');
+    toast('📡 GPS activado');
+
+    gpsWatch = navigator.geolocation.watchPosition(pos=>{
+      const {latitude:lat,longitude:lon,accuracy} = pos.coords;
+
+      // Marcador posición
+      if(!userMarker){
+        const el = document.createElement('div');
+        el.style.cssText='width:20px;height:20px;position:relative;display:flex;align-items:center;justify-content:center;';
+        el.innerHTML=`
+          <div style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(66,133,244,.1);border:1.5px solid rgba(66,133,244,.4);animation:userPulse 2s infinite;"></div>
+          <div style="width:14px;height:14px;border-radius:50%;background:#4285F4;border:2.5px solid #fff;box-shadow:0 0 10px rgba(66,133,244,.8);position:relative;z-index:2;"></div>
+        `;
+        userMarker = L.marker([lat,lon],{
+          icon:L.divIcon({className:'',html:el.outerHTML,iconSize:[20,20],iconAnchor:[10,10]}),
+          zIndexOffset:1000
+        }).addTo(lmap);
+      } else {
+        userMarker.setLatLng([lat,lon]);
+      }
+
+      if(followMode) lmap.panTo([lat,lon],{animate:true,duration:.5});
+
+      // Tramo recorrido
+      let minD=Infinity,minI=0;
+      coords.forEach(([la,lo],i)=>{const d=Math.hypot(lat-la,lon-lo);if(d<minD){minD=d;minI=i;}});
+      if(minI>1) doneLine.setLatLngs(coords.slice(0,minI+1));
+
+      // HUD
+      const dMeta = distKm(lat,lon,PM.meta_lat,PM.meta_lon);
+      document.getElementById('hud-acc').textContent=`📍 ±${Math.round(accuracy||0)}m`;
+      document.getElementById('hud-meta').textContent=`🏁 ${dMeta.toFixed(1)} km a la meta`;
+
+      // Checkpoints automáticos
+      PM.waypoints.forEach(wp=>{
+        if(!visited.has(wp.id) && distKm(lat,lon,wp.lat,wp.lon)<.15){
+          visited.add(wp.id);
+          toast(`📍 WP${wp.id}: ${wp.name}`);
+          openPanel(wp);
+        }
+      });
+
+    },()=>toast('⚠ Señal perdida — modo offline'),
+    {enableHighAccuracy:true,timeout:15000,maximumAge:3000});
+
+  } else {
+    gpsOn=false;
+    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
+    document.getElementById('gps-dot').classList.remove('on');
+    document.getElementById('gps-btn').classList.remove('active');
+    document.getElementById('gps-label').textContent='GPS';
+    document.getElementById('hud').classList.remove('show');
+    toast('GPS desactivado');
+  }
+};
+
+// Follow mode
+lmap.on('dragstart',()=>{
+  followMode=false;
+  const b=document.getElementById('follow-btn');
+  b.classList.remove('on');b.textContent='⊙ Seguirme';
+});
+
+window.toggleFollow = function(){
+  followMode=!followMode;
+  const b=document.getElementById('follow-btn');
+  if(followMode){
+    b.classList.add('on');b.textContent='⊙ Siguiendo';
+    if(userMarker) lmap.panTo(userMarker.getLatLng());
+    toast('🔵 Siguiendo tu posición');
+  } else {
+    b.classList.remove('on');b.textContent='⊙ Seguirme';
+  }
+};
+
+// ── PANEL WAYPOINT
+let activeWP=null;
+function openPanel(wp){
+  activeWP=wp.id;
+  document.getElementById('panel-num').textContent=`Waypoint ${wp.id} / 9`;
+  document.getElementById('panel-body').innerHTML=`
+    <div class="p-name">${wp.name}</div>
+    <div class="p-sub">${wp.sub}</div>
+    <div class="p-div"></div>
+    <p class="p-desc">${wp.desc}</p>
+    <div class="p-specs">
+      ${wp.specs.map(([v,k],i)=>`<div class="p-spec${i<2?' hi':''}"><div class="p-spec-val">${v}</div><div class="p-spec-key">${k}</div></div>`).join('')}
+    </div>
+    <div class="p-alert">
+      <div class="p-alert-t">${wp.alert.t}</div>
+      <div class="p-alert-b">${wp.alert.b}</div>
+    </div>
+    <div class="p-meta-label">🏁 Navegar hacia la meta</div>
+    <div class="p-meta-dest">Caballito de Palo — Punto de llegada</div>
+    <div class="nav-row">
+      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=${PM.meta_lat},${PM.meta_lon}&travelmode=driving" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Google Maps
+      </a>
+      <a class="nav-btn waze" href="https://waze.com/ul?ll=${PM.meta_lat},${PM.meta_lon}&navigate=yes" target="_blank">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
+        Waze
+      </a>
+    </div>
+    <div class="p-coords">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m snm</div>
+  `;
+  document.getElementById('wp-panel').classList.add('open');
+  lmap.flyTo([wp.lat,wp.lon],14,{animate:true,duration:1});
+}
+
+function closePanel(){
+  document.getElementById('wp-panel').classList.remove('open');
+  activeWP=null;
+}
+
+// Abrir waypoint desde URL param (?wp=4)
+(function(){
+  const params=new URLSearchParams(location.search);
+  const wpId=parseInt(params.get('wp'));
+  if(wpId){
+    const wp=PM.waypoints.find(w=>w.id===wpId);
+    if(wp) setTimeout(()=>openPanel(wp),800);
+  }
+})();
+
+// ── UTILS
+function distKm(la1,lo1,la2,lo2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
