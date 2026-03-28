@@ -24,34 +24,81 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
 /* ══ SPLASH ══ */
 #splash{
   position:fixed;inset:0;z-index:2000;
-  background:var(--black);
+  background:rgba(8,8,8,.82);
+  backdrop-filter:blur(2px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px;transition:opacity .5s ease,visibility .5s ease;
+  padding:28px;transition:opacity .6s ease,visibility .6s ease;
 }
 #splash.hidden{opacity:0;visibility:hidden;pointer-events:none;}
-.splash-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,13vw,88px);
-  line-height:.85;color:var(--white);text-align:center;margin-bottom:6px;}
+
+/* Canvas de ruta — fondo, sin borde, integrado */
+#splash-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  opacity:.18;pointer-events:none;
+}
+
+/* Contenido encima del canvas */
+.splash-inner{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;
+  gap:0;
+}
+
+.splash-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(52px,14vw,100px);
+  line-height:.85;color:var(--white);text-align:center;
+  margin-bottom:8px;
+  text-shadow:0 0 60px rgba(255,69,0,.3);
+}
 .splash-logo span{color:var(--orange);}
-.splash-sub{font-size:10px;letter-spacing:.4em;text-transform:uppercase;
-  color:var(--grey);margin-bottom:28px;text-align:center;}
-#splash-canvas{width:min(300px,78vw);height:min(160px,42vw);
-  margin-bottom:28px;border:1px solid var(--border);}
-.splash-btn{background:var(--orange);color:var(--black);
-  font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,5vw,28px);letter-spacing:.06em;
+
+.splash-sub{
+  font-size:10px;letter-spacing:.45em;text-transform:uppercase;
+  color:rgba(242,237,228,.45);margin-bottom:52px;text-align:center;
+}
+
+/* CTA unificado — botón + descripción GPS como bloque único */
+.splash-cta-block{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  max-width:340px;width:100%;
+}
+
+.splash-btn{
+  background:var(--orange);color:var(--black);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(20px,5vw,26px);letter-spacing:.06em;
   padding:18px 44px;border:none;cursor:pointer;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
-  display:flex;align-items:center;gap:12px;margin-bottom:12px;
-  animation:pCTA 2s infinite;transition:background .2s;}
+  display:flex;align-items:center;gap:12px;width:100%;justify-content:center;
+  animation:pCTA 2.5s infinite;transition:background .2s;
+}
 .splash-btn:hover{background:var(--orange2);}
-@keyframes pCTA{0%,100%{box-shadow:0 0 0 0 rgba(255,69,0,.5);}50%{box-shadow:0 0 0 18px rgba(255,69,0,0);}}
-.btn-dot{width:9px;height:9px;border-radius:50%;background:rgba(0,0,0,.4);animation:dp 1s infinite;}
+@keyframes pCTA{0%,100%{box-shadow:0 0 0 0 rgba(255,69,0,.4);}50%{box-shadow:0 0 0 20px rgba(255,69,0,0);}}
+.btn-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.5);animation:dp 1s infinite;flex-shrink:0;}
 @keyframes dp{0%,100%{opacity:.5;}50%{opacity:1;}}
-.splash-skip{background:none;border:1px solid var(--border);color:var(--grey);
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
-  padding:9px 20px;cursor:pointer;transition:all .2s;margin-bottom:16px;}
-.splash-skip:hover{border-color:var(--grey);color:var(--white);}
-.splash-perms{font-size:9px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--border);text-align:center;line-height:1.8;}
+
+/* Descripción GPS integrada bajo el botón */
+.splash-gps-desc{
+  background:rgba(8,8,8,.6);
+  border:1px solid var(--border);
+  border-top:none;
+  padding:12px 18px;
+  width:100%;
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:20px;
+}
+.splash-gps-icon{
+  font-size:16px;flex-shrink:0;margin-top:1px;
+}
+.splash-gps-text{
+  font-size:10px;letter-spacing:.12em;line-height:1.7;
+  color:rgba(242,237,228,.5);
+}
+.splash-gps-text strong{
+  display:block;color:rgba(242,237,228,.75);
+  letter-spacing:.2em;margin-bottom:2px;font-size:10px;
+}
 
 /* ══ TOPBAR ══ */
 #topbar{flex-shrink:0;background:rgba(8,8,8,.96);backdrop-filter:blur(12px);
@@ -208,17 +255,28 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
 
 <!-- ══ SPLASH ══ -->
 <div id="splash">
-  <div class="splash-logo">PASEO<br><span>PROMOBILITY</span></div>
-  <div class="splash-sub">Cordillera de la Costa · V Región · 25.9 km · Objetivo: 40–50 min</div>
+  <!-- Canvas ocupa todo el fondo del splash -->
   <canvas id="splash-canvas"></canvas>
-  <button class="splash-btn" onclick="startNavigation()">
-    <div class="btn-dot"></div>
-    INICIAR RUTA CON GPS
-  </button>
-  <button class="splash-skip" onclick="skipGPS()">Solo explorar el mapa</button>
-  <div class="splash-perms">
-    Se solicitará acceso a GPS · Notificaciones · Audio<br>
-    Conecta los auriculares o audio del casco antes de iniciar
+
+  <div class="splash-inner">
+    <div class="splash-logo">PASEO<br><span>PROMOBILITY</span></div>
+    <div class="splash-sub">Cordillera de la Costa · V Región · 25.9 km</div>
+
+    <div class="splash-cta-block">
+      <button class="splash-btn" onclick="startNavigation()">
+        <div class="btn-dot"></div>
+        INICIAR RUTA CON GPS
+      </button>
+
+      <div class="splash-gps-desc">
+        <span class="splash-gps-icon">📡</span>
+        <div class="splash-gps-text">
+          <strong>Navegación satelital activada</strong>
+          Al iniciar, el sistema usa el GPS de tu dispositivo para mostrarte en tiempo real sobre la ruta, activar checkpoints con audio y registrar tu tiempo. Conecta el audio del casco antes de partir.
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -509,43 +567,79 @@ function updateChrono(){
 // ══════════════════════════════════════════
 (function initSplash(){
   const c=document.getElementById('splash-canvas');
-  const W=c.offsetWidth, H=c.offsetHeight;
-  c.width=W; c.height=H;
-  const ctx=c.getContext('2d');
+  function resize(){
+    c.width=window.innerWidth;
+    c.height=window.innerHeight;
+    drawFrame();
+  }
   const mnLon=-71.415,mxLon=-71.318,mnLat=-32.722,mxLat=-32.668;
-  const tx=lon=>(lon-mnLon)/(mxLon-mnLon)*W;
-  const ty=lat=>(1-(lat-mnLat)/(mxLat-mnLat))*H;
-  function base(){
-    ctx.fillStyle='#0d160d'; ctx.fillRect(0,0,W,H);
-    for(let i=0;i<8;i++){
-      ctx.beginPath();
-      const y0=H*.1+i*H*.1,amp=6+i*2;
-      for(let x=0;x<=W;x+=3) ctx.lineTo(x,y0+Math.sin(x/W*Math.PI*5+i*.8)*amp);
-      ctx.strokeStyle=`rgba(50,90,40,${.07-i*.005})`; ctx.lineWidth=1; ctx.stroke();
-    }
-    ctx.beginPath();
-    PM.ruta.forEach(([ln,la],i)=>{const x=tx(ln),y=ty(la);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    ctx.strokeStyle='rgba(255,69,0,.15)'; ctx.lineWidth=10; ctx.filter='blur(3px)'; ctx.stroke(); ctx.filter='none';
-    ctx.beginPath();
-    PM.ruta.forEach(([ln,la],i)=>{const x=tx(ln),y=ty(la);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    ctx.strokeStyle='#FF4500'; ctx.lineWidth=2; ctx.stroke();
-    PM.waypoints.forEach(wp=>{
-      ctx.beginPath(); ctx.arc(tx(wp.lon),ty(wp.lat),3.5,0,Math.PI*2);
-      ctx.fillStyle=wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500'; ctx.fill();
-    });
-  }
+  function tx(lon){ return (lon-mnLon)/(mxLon-mnLon)*c.width; }
+  function ty(lat){ return (1-(lat-mnLat)/(mxLat-mnLat))*c.height; }
+
+  // Márgenes para que la ruta no ocupe todo el canvas
+  const pad = 0.15;
+  function txp(lon){ return pad*c.width + (lon-mnLon)/(mxLon-mnLon)*(c.width*(1-pad*2)); }
+  function typ(lat){ return pad*c.height + (1-(lat-mnLat)/(mxLat-mnLat))*(c.height*(1-pad*2)); }
+
   let prog=0;
-  function anim(){
-    base();
-    prog=(prog+.004)%1;
+  function drawFrame(){
+    const W=c.width, H=c.height;
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+
+    // Curvas de nivel muy sutiles
+    for(let i=0;i<12;i++){
+      ctx.beginPath();
+      const y0=H*.05+i*H*.09,amp=8+i*2.5;
+      for(let x=0;x<=W;x+=6) ctx.lineTo(x,y0+Math.sin(x/W*Math.PI*4+i*.9)*amp);
+      ctx.strokeStyle=`rgba(50,100,40,${.055-i*.003})`;
+      ctx.lineWidth=1;ctx.stroke();
+    }
+
+    // Ruta — glow
+    ctx.beginPath();
+    PM.ruta.forEach(([ln,la],i)=>{
+      const x=txp(ln),y=typ(la);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='rgba(255,69,0,.12)';
+    ctx.lineWidth=16;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.filter='blur(6px)';ctx.stroke();ctx.filter='none';
+
+    // Ruta — línea
+    ctx.beginPath();
+    PM.ruta.forEach(([ln,la],i)=>{
+      const x=txp(ln),y=typ(la);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='rgba(255,69,0,.6)';
+    ctx.lineWidth=1.5;ctx.stroke();
+
+    // Waypoints
+    PM.waypoints.forEach(wp=>{
+      ctx.beginPath();
+      ctx.arc(txp(wp.lon),typ(wp.lat),3,0,Math.PI*2);
+      ctx.fillStyle=wp.type==='summit'?'rgba(255,179,71,.7)':
+                    wp.type==='startend'?'rgba(76,175,80,.7)':'rgba(255,69,0,.6)';
+      ctx.fill();
+    });
+
+    // Punto animado
+    prog=(prog+.003)%1;
     const [ln,la]=PM.ruta[Math.floor(prog*PM.ruta.length)];
-    const x=tx(ln),y=ty(la);
-    ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle='rgba(66,133,244,.15)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fillStyle='#4285F4'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.5; ctx.stroke();
-    if(!document.getElementById('splash').classList.contains('hidden')) requestAnimationFrame(anim);
+    const px=txp(ln),py=typ(la);
+    ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);
+    ctx.fillStyle='rgba(66,133,244,.12)';ctx.fill();
+    ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(66,133,244,.8)';ctx.fill();
+    ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.5;ctx.stroke();
+
+    if(!document.getElementById('splash').classList.contains('hidden'))
+      requestAnimationFrame(drawFrame);
   }
-  setTimeout(anim,400);
+  window.addEventListener('resize',resize);
+  resize();
 })();
 
 // ══════════════════════════════════════════
@@ -737,10 +831,11 @@ window.startNavigation=async function(){
   setTimeout(toggleGPS, 1500);
 };
 
-window.skipGPS=function(){
-  document.getElementById('splash').classList.add('hidden');
+// Si GPS falla — fallback silencioso mostrando la ruta completa
+function skipGPS(){
   lmap.fitBounds(routeLine.getBounds(),{padding:[40,40]});
-};
+  toast('GPS no disponible — explora la ruta manualmente','alert',4000);
+}
 
 // ══════════════════════════════════════════
 // PANEL WAYPOINT
