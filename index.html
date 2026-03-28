@@ -545,186 +545,91 @@ let fsGpsOn=false, fsGpsWatch=null, fsVisited=new Set();
 window.openFullscreenMap=function(){
   document.getElementById('map-fullscreen').classList.add('open');
   document.body.style.overflow='hidden';
-  if(!fsMap) initFsMap();
+
+  // Mover el mapa existente al container fullscreen
+  const fsInner = document.getElementById('map-fullscreen-inner');
+  const mapEl = document.getElementById('mapbox-map');
+
+  if(map && mapReady){
+    // Mover el div del mapa al fullscreen
+    fsInner.insertBefore(mapEl, fsInner.firstChild);
+    map.resize();
+    // Vista inmersiva con relieve
+    map.easeTo({
+      center:[-71.37880,-32.68066],
+      zoom:12.5,
+      pitch:62,
+      bearing:30,
+      duration:2500
+    });
+    fsMap = map;
+    fsMapReady = true;
+  }
 };
 
 window.closeFullscreenMap=function(){
   document.getElementById('map-fullscreen').classList.remove('open');
   document.body.style.overflow='';
-  if(fsGpsOn) toggleFsGPS(); // apagar GPS al cerrar
+  if(fsGpsOn) toggleFsGPS();
+
+  // Devolver el mapa a su container original
+  const mapWrap = document.getElementById('map-wrap');
+  const mapEl = document.getElementById('mapbox-map');
+  if(mapEl && mapWrap){
+    mapWrap.insertBefore(mapEl, mapWrap.firstChild);
+    if(map) map.resize();
+  }
 };
 
-function initFsMap(){
-  fsMap=new mapboxgl.Map({
-    container:'mapbox-map-fs',
-    style:MAP_STYLES.satellite,
-    center:[-71.3666,-32.6974],
-    zoom:12,
-    pitch:60,
-    bearing:-15,
-    antialias:true
+// fs GPS usa el mapa principal
+window.toggleFsGPS = window.toggleGPS;
+window.toggleFsFollow = window.toggleFollow;
+window.setFsStyle = function(btn){
+  document.querySelectorAll('[data-fs]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  // Sync con botones del mapa principal
+  const s = btn.dataset.fs;
+  document.querySelectorAll('[data-s]').forEach(b=>{
+    b.classList.toggle('on', b.dataset.s===s);
   });
-
-  fsMap.on('load',()=>{
-    fsMapReady=true;
-    // Terreno 3D exagerado
-    fsMap.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
-    fsMap.setTerrain({source:'mapbox-dem',exaggeration:2.5});
-    fsMap.setFog({'range':[.5,14],'color':'#0d0800','high-color':'#1a0e00','space-color':'#000','star-intensity':.8,'horizon-blend':0.04});
-
-    // Accuracy circle
-    fsMap.addSource('fs-acc',{type:'geojson',data:{type:'Feature',geometry:{type:'Point',coordinates:[-71.3666,-32.6974]}}});
-    fsMap.addLayer({id:'fs-acc-circle',type:'circle',source:'fs-acc',paint:{
-      'circle-radius':['interpolate',['exponential',2],['zoom'],10,20,15,80],
-      'circle-color':'rgba(66,133,244,0.08)',
-      'circle-stroke-width':1,'circle-stroke-color':'rgba(66,133,244,0.3)'
-    }});
-
-    // Ruta recorrida (gris)
-    fsMap.addSource('fs-done',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[ROUTE[0]]}}});
-    fsMap.addLayer({id:'fs-done-line',type:'line',source:'fs-done',paint:{'line-color':'rgba(255,255,255,.2)','line-width':4,'line-cap':'round'}});
-
-    // Ruta glow
-    fsMap.addSource('fs-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
-    fsMap.addLayer({id:'fs-route-glow',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':18,'line-opacity':.18,'line-blur':12}});
-    fsMap.addLayer({id:'fs-route-line',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':4,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});
-
-    // Waypoint markers
-    WP.forEach(wp=>{
-      const el=document.createElement('div');
-      el.className='wp-pin'+(wp.type==='summit'?' summit':wp.type==='startend'?' startend':'');
-      el.innerHTML=`<span class="wp-pin-label">${wp.name}</span>${wp.id}`;
-      el.addEventListener('click',()=>openFsPanel(wp));
-      new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([wp.lon,wp.lat]).addTo(fsMap);
-    });
-
-    // Fly intro — recorre la ruta dramáticamente
-    fsMap.flyTo({center:WP[3].lon<-71?[WP[3].lon,WP[3].lat]:[-71.37880,-32.68066],zoom:13,pitch:65,bearing:45,duration:3000,essential:true});
+  if(!map) return;
+  map.setStyle(MAP_STYLES[s]);
+  map.once('styledata',()=>{
+    if(!map.getSource('mapbox-dem')){
+      map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
+      map.setTerrain({source:'mapbox-dem',exaggeration:2.5});
+    }
+    addMapLayers();
   });
-
-  fsMap.on('dragstart',()=>{
-    fsFollowMode=false;
-    const b=document.getElementById('fs-follow-btn');
-    if(b){b.textContent='⊙ Seguirme';b.style.borderColor='var(--border)';}
-  });
-}
+};
 
 function openFsPanel(wp){
-  document.getElementById('fs-wpp-num').textContent=`Waypoint ${wp.id} / 9`;
-  document.getElementById('fs-wpp-body').innerHTML=`
-    <div class="wpp-name">${wp.name}</div>
-    <div class="wpp-sub">${wp.sub}</div>
-    <div class="wpp-divider"></div>
-    <p class="wpp-desc">${wp.desc}</p>
-    <div class="wpp-grid">${wp.specs.map(([v,k],i)=>`<div class="wpp-spec${i<2?' accent':''}"><div class="wpp-spec-val">${v}</div><div class="wpp-spec-key">${k}</div></div>`).join('')}</div>
-    <div class="wpp-alert"><div class="wpp-alert-t">${wp.alert.t}</div><div class="wpp-alert-b">${wp.alert.b}</div></div>
-    <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);">🏁 Navegar hacia la meta</div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--orange);margin-bottom:10px;">Caballito de Palo — Llegada</div>
-    <div class="nav-btns">
-      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=-32.69584,-71.40572&travelmode=driving" target="_blank">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        Google Maps
-      </a>
-      <a class="nav-btn waze" href="https://waze.com/ul?ll=-32.69584,-71.40572&navigate=yes" target="_blank">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
-        Waze
-      </a>
-    </div>
-    <div class="wpp-coords" style="margin-top:12px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m</div>
-  `;
-  document.getElementById('wp-panel-fs').style.transform='translateX(0)';
-  if(fsMap&&fsMapReady) fsMap.flyTo({center:[wp.lon,wp.lat],zoom:14.5,pitch:62,bearing:-20,duration:1200});
+  // Reusar panel principal
+  openPanel(wp);
 }
+window.closeFsPanel=function(){ closePanel(); };
 
-window.closeFsPanel=function(){
-  document.getElementById('wp-panel-fs').style.transform='translateX(100%)';
-};
-
-// GPS en mapa fullscreen
-window.toggleFsGPS=function(){
-  if(!fsGpsOn){
-    if(!navigator.geolocation){toast('GPS no disponible');return;}
-    fsGpsOn=true;
-    fsFollowMode=true;
-    const btn=document.getElementById('fs-gps-btn');
-    const dot=document.getElementById('fs-gps-dot');
+// GPS fullscreen — sincroniza botones del topbar
+const _origToggleGPS = window.toggleGPS;
+window.toggleFsGPS = function(){
+  _origToggleGPS();
+  // Sync botón del topbar fullscreen
+  const btn = document.getElementById('fs-gps-btn');
+  if(!btn) return;
+  if(gpsOn){
     btn.classList.add('active');
-    btn.innerHTML=`<div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:#fff;animation:gpsPulse 1.5s infinite;flex-shrink:0;"></div> GPS Activo`;
-    document.getElementById('fs-follow-btn').style.borderColor='#4285F4';
-    document.getElementById('fs-follow-btn').style.color='#4285F4';
-    document.getElementById('fs-follow-btn').textContent='⊙ Siguiendo';
+    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:#fff;animation:gpsPulse 1.5s infinite;flex-shrink:0;"></div> GPS Activo`;
     const hud=document.getElementById('fs-hud');
     if(hud) hud.style.display='flex';
-    toast('📡 GPS activado');
-
-    fsGpsWatch=navigator.geolocation.watchPosition(pos=>{
-      const{latitude:lat,longitude:lon,accuracy,heading}=pos.coords;
-      if(fsMap&&fsMapReady){
-        if(!fsUserDot||!fsUserDot._map){
-          const el=document.createElement('div');
-          el.style.cssText='width:20px;height:20px;position:relative;display:flex;align-items:center;justify-content:center;';
-          el.innerHTML=`
-            <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(66,133,244,.12);border:1.5px solid rgba(66,133,244,.4);animation:userPulse 2s infinite;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid #fff;box-shadow:0 0 12px rgba(66,133,244,.8);position:relative;z-index:2;"></div>
-            <div id="fs-arrow" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid #4285F4;z-index:3;transition:transform .3s;"></div>
-          `;
-          fsUserDot=new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([lon,lat]).addTo(fsMap);
-        } else {
-          fsUserDot.setLngLat([lon,lat]);
-        }
-        if(heading!==null&&heading!==undefined){
-          const a=document.getElementById('fs-arrow');
-          if(a) a.style.transform=`translateX(-50%) rotate(${heading}deg)`;
-        }
-        if(fsMap.getSource('fs-acc')){
-          fsMap.getSource('fs-acc').setData({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]}});
-        }
-        if(fsFollowMode){
-          fsMap.easeTo({center:[lon,lat],zoom:14.5,pitch:62,bearing:heading||fsMap.getBearing(),duration:600});
-        }
-        // Tramo recorrido
-        let minD=Infinity,minI=0;
-        ROUTE.forEach(([rl,rlat],i)=>{const d=Math.hypot(lat-rlat,lon-rl);if(d<minD){minD=d;minI=i;}});
-        if(minI>1&&fsMap.getSource('fs-done')){
-          fsMap.getSource('fs-done').setData({type:'Feature',geometry:{type:'LineString',coordinates:ROUTE.slice(0,minI+1)}});
-        }
-        // HUD
-        const dMeta=distKm(lat,lon,-32.69584,-71.40572);
-        const hud=document.getElementById('fs-hud');
-        if(hud) hud.innerHTML=`<span>📍 ${Math.round(accuracy||0)}m precisión</span><span>🏁 Meta: ${dMeta.toFixed(1)} km</span>`;
-      }
-      // Checkpoints
-      WP.forEach(wp=>{
-        if(!fsVisited.has(wp.id)&&distKm(lat,lon,wp.lat,wp.lon)<.15){
-          fsVisited.add(wp.id);
-          toast(`📍 WP${wp.id}: ${wp.name}`);
-          openFsPanel(wp);
-        }
-      });
-    },()=>toast('⚠ Señal GPS perdida — modo offline'),{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
   } else {
-    fsGpsOn=false;
-    if(fsGpsWatch) navigator.geolocation.clearWatch(fsGpsWatch);
-    const btn=document.getElementById('fs-gps-btn');
     btn.classList.remove('active');
-    btn.innerHTML=`<div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div> Activar GPS`;
+    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div> Activar GPS`;
     const hud=document.getElementById('fs-hud');
     if(hud) hud.style.display='none';
-    toast('GPS desactivado');
   }
 };
 
-window.toggleFsFollow=function(){
-  fsFollowMode=!fsFollowMode;
-  const b=document.getElementById('fs-follow-btn');
-  if(fsFollowMode){
-    b.style.borderColor='#4285F4'; b.style.color='#4285F4'; b.textContent='⊙ Siguiendo';
-    if(fsMap&&fsGpsOn&&fsUserDot) fsMap.easeTo({center:fsUserDot.getLngLat(),zoom:14.5,pitch:62,duration:800});
-    toast('🔵 Modo seguimiento activado');
-  } else {
-    b.style.borderColor='var(--border)'; b.style.color='var(--grey)'; b.textContent='⊙ Seguirme';
-  }
-};
+window.toggleFsFollow=window.toggleFollow;
 
 window.setFsStyle=function(btn){
   document.querySelectorAll('[data-fs]').forEach(b=>b.classList.remove('on'));
