@@ -197,8 +197,101 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
 .reveal.visible{opacity:1;transform:none;}
 
-/* MAPBOX */
-.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right,.mapboxgl-ctrl-top-right{display:none;}
+/* FULLSCREEN MAP MODE */
+#map-fullscreen {
+  position:fixed;inset:0;z-index:900;
+  display:none;flex-direction:column;
+  background:var(--black);
+}
+#map-fullscreen.open { display:flex; }
+#map-fullscreen-inner {
+  position:relative;flex:1;
+}
+#map-fullscreen-inner #mapbox-map-fs {
+  position:absolute;inset:0;width:100%;height:100%;
+}
+.fs-topbar {
+  background:rgba(8,8,8,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:12px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  z-index:10;
+}
+.fs-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;
+  letter-spacing:.05em;
+  color:var(--white);
+}
+.fs-title span { color:var(--orange); }
+.fs-close {
+  background:none;border:1px solid var(--border);
+  color:var(--grey);font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  padding:8px 16px;cursor:pointer;transition:all .2s;
+}
+.fs-close:hover { border-color:var(--orange);color:var(--orange); }
+.fs-gps {
+  background:var(--orange);color:var(--black);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  padding:9px 20px;border:none;cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+  transition:background .2s;
+}
+.fs-gps:hover { background:var(--orange2); }
+.fs-gps.active { background:var(--green);color:#fff; }
+.fs-stats {
+  display:flex;gap:20px;
+}
+.fs-stat {
+  display:flex;flex-direction:column;gap:2px;
+}
+.fs-stat-val {
+  font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:var(--white);
+}
+.fs-stat-key {
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--orange);
+}
+/* CTA navegar */
+.map-cta-wrap {
+  margin-top:28px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.btn-nav-ruta {
+  background:var(--orange);
+  color:var(--black);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(18px,2.5vw,26px);
+  letter-spacing:.08em;
+  padding:18px 40px;
+  border:none;
+  cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  transition:background .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  text-decoration:none;
+}
+.btn-nav-ruta:hover { background:var(--orange2); }
+.btn-nav-ruta .arrow {
+  font-size:1.2em;
+  animation:arrowPulse 1.5s infinite;
+}
+@keyframes arrowPulse {
+  0%,100%{transform:translateX(0);}
+  50%{transform:translateX(5px);}
+}
 </style>
 </head>
 <body>
@@ -273,7 +366,15 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
       <div class="sec-label">Mapa de Ruta</div>
       <h2 class="sec-title">TERRITORIO<br>EN VIVO</h2>
     </div>
-    <p class="map-desc">Activa GPS para navegar en tiempo real. Waypoints se abren al llegar. Funciona sin internet una vez cargado.</p>
+    <p class="map-desc">Mapa 3D con relieve real. Activa GPS y navega la ruta con tu posición en tiempo real. Funciona sin internet una vez cargado.</p>
+  </div>
+
+  <!-- CTA PRINCIPAL -->
+  <div class="map-cta-wrap reveal">
+    <button class="btn-nav-ruta" onclick="openFullscreenMap()">
+      <span class="arrow">▶</span> NAVEGA LA RUTA AQUÍ
+    </button>
+    <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--grey);">GPS · Terreno 3D · Offline</span>
   </div>
   <div id="map-wrap" class="reveal">
     <div id="mapbox-map"></div>
@@ -391,6 +492,264 @@ footer{padding:22px 7vw;border-top:1px solid var(--border);display:flex;justify-
   <div class="foot-copy">Cordillera de la Costa · V Región · Chile · 2026</div>
   <div class="foot-copy" style="color:#1e1e1e;">horta30.github.io/paseo-promobility</div>
 </footer>
+
+<!-- FULLSCREEN MAP MODE -->
+<div id="map-fullscreen">
+  <div class="fs-topbar">
+    <div class="fs-title">PASEO <span>PROMOBILITY</span></div>
+    <div class="fs-stats">
+      <div class="fs-stat"><span class="fs-stat-val">25.9</span><span class="fs-stat-key">km</span></div>
+      <div class="fs-stat"><span class="fs-stat-val">655</span><span class="fs-stat-key">msnm</span></div>
+      <div class="fs-stat"><span class="fs-stat-val">9</span><span class="fs-stat-key">checkpoints</span></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div id="fs-hud" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.15em;color:var(--grey);display:none;gap:16px;"></div>
+      <button class="fs-gps" id="fs-gps-btn" onclick="toggleFsGPS()">
+        <div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div>
+        Activar GPS
+      </button>
+      <button class="fs-close" onclick="closeFullscreenMap()">✕ Cerrar mapa</button>
+    </div>
+  </div>
+  <div id="map-fullscreen-inner">
+    <div id="mapbox-map-fs"></div>
+    <!-- Waypoint panel fullscreen -->
+    <div id="wp-panel-fs" style="position:absolute;right:0;top:0;bottom:0;width:300px;background:rgba(8,8,8,.95);backdrop-filter:blur(16px);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow-y:auto;z-index:10;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(8,8,8,.98);z-index:10;">
+        <span id="fs-wpp-num" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--orange);"></span>
+        <button onclick="closeFsPanel()" style="background:none;border:1px solid var(--border);color:var(--grey);width:28px;height:28px;cursor:pointer;font-size:13px;">✕</button>
+      </div>
+      <div id="fs-wpp-body" style="padding:18px;"></div>
+    </div>
+    <!-- Follow btn -->
+    <button id="fs-follow-btn" onclick="toggleFsFollow()"
+      style="position:absolute;bottom:24px;right:16px;background:rgba(8,8,8,.88);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:10px 16px;cursor:pointer;z-index:5;">
+      ⊙ Seguirme
+    </button>
+    <!-- Style btns -->
+    <div style="position:absolute;bottom:24px;left:16px;display:flex;gap:6px;z-index:5;">
+      <button class="mstyle on" data-fs="satellite" onclick="setFsStyle(this)">Satélite</button>
+      <button class="mstyle" data-fs="terrain" onclick="setFsStyle(this)">Terreno</button>
+      <button class="mstyle" data-fs="dark" onclick="setFsStyle(this)">Oscuro</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// FULLSCREEN MAP
+// ══════════════════════════════════════════
+let fsMap=null, fsMapReady=false, fsUserDot=null, fsFollowMode=true;
+let fsGpsOn=false, fsGpsWatch=null, fsVisited=new Set();
+
+window.openFullscreenMap=function(){
+  document.getElementById('map-fullscreen').classList.add('open');
+  document.body.style.overflow='hidden';
+  if(!fsMap) initFsMap();
+};
+
+window.closeFullscreenMap=function(){
+  document.getElementById('map-fullscreen').classList.remove('open');
+  document.body.style.overflow='';
+  if(fsGpsOn) toggleFsGPS(); // apagar GPS al cerrar
+};
+
+function initFsMap(){
+  fsMap=new mapboxgl.Map({
+    container:'mapbox-map-fs',
+    style:MAP_STYLES.satellite,
+    center:[-71.3666,-32.6974],
+    zoom:12,
+    pitch:60,
+    bearing:-15,
+    antialias:true
+  });
+
+  fsMap.on('load',()=>{
+    fsMapReady=true;
+    // Terreno 3D exagerado
+    fsMap.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
+    fsMap.setTerrain({source:'mapbox-dem',exaggeration:2.5});
+    fsMap.setFog({'range':[.5,14],'color':'#0d0800','high-color':'#1a0e00','space-color':'#000','star-intensity':.8,'horizon-blend':0.04});
+
+    // Accuracy circle
+    fsMap.addSource('fs-acc',{type:'geojson',data:{type:'Feature',geometry:{type:'Point',coordinates:[-71.3666,-32.6974]}}});
+    fsMap.addLayer({id:'fs-acc-circle',type:'circle',source:'fs-acc',paint:{
+      'circle-radius':['interpolate',['exponential',2],['zoom'],10,20,15,80],
+      'circle-color':'rgba(66,133,244,0.08)',
+      'circle-stroke-width':1,'circle-stroke-color':'rgba(66,133,244,0.3)'
+    }});
+
+    // Ruta recorrida (gris)
+    fsMap.addSource('fs-done',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[ROUTE[0]]}}});
+    fsMap.addLayer({id:'fs-done-line',type:'line',source:'fs-done',paint:{'line-color':'rgba(255,255,255,.2)','line-width':4,'line-cap':'round'}});
+
+    // Ruta glow
+    fsMap.addSource('fs-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
+    fsMap.addLayer({id:'fs-route-glow',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':18,'line-opacity':.18,'line-blur':12}});
+    fsMap.addLayer({id:'fs-route-line',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':4,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});
+
+    // Waypoint markers
+    WP.forEach(wp=>{
+      const el=document.createElement('div');
+      el.className='wp-pin'+(wp.type==='summit'?' summit':wp.type==='startend'?' startend':'');
+      el.innerHTML=`<span class="wp-pin-label">${wp.name}</span>${wp.id}`;
+      el.addEventListener('click',()=>openFsPanel(wp));
+      new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([wp.lon,wp.lat]).addTo(fsMap);
+    });
+
+    // Fly intro — recorre la ruta dramáticamente
+    fsMap.flyTo({center:WP[3].lon<-71?[WP[3].lon,WP[3].lat]:[-71.37880,-32.68066],zoom:13,pitch:65,bearing:45,duration:3000,essential:true});
+  });
+
+  fsMap.on('dragstart',()=>{
+    fsFollowMode=false;
+    const b=document.getElementById('fs-follow-btn');
+    if(b){b.textContent='⊙ Seguirme';b.style.borderColor='var(--border)';}
+  });
+}
+
+function openFsPanel(wp){
+  document.getElementById('fs-wpp-num').textContent=`Waypoint ${wp.id} / 9`;
+  document.getElementById('fs-wpp-body').innerHTML=`
+    <div class="wpp-name">${wp.name}</div>
+    <div class="wpp-sub">${wp.sub}</div>
+    <div class="wpp-divider"></div>
+    <p class="wpp-desc">${wp.desc}</p>
+    <div class="wpp-grid">${wp.specs.map(([v,k],i)=>`<div class="wpp-spec${i<2?' accent':''}"><div class="wpp-spec-val">${v}</div><div class="wpp-spec-key">${k}</div></div>`).join('')}</div>
+    <div class="wpp-alert"><div class="wpp-alert-t">${wp.alert.t}</div><div class="wpp-alert-b">${wp.alert.b}</div></div>
+    <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--grey);">🏁 Navegar hacia la meta</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--orange);margin-bottom:10px;">Caballito de Palo — Llegada</div>
+    <div class="nav-btns">
+      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=-32.69584,-71.40572&travelmode=driving" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Google Maps
+      </a>
+      <a class="nav-btn waze" href="https://waze.com/ul?ll=-32.69584,-71.40572&navigate=yes" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
+        Waze
+      </a>
+    </div>
+    <div class="wpp-coords" style="margin-top:12px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m</div>
+  `;
+  document.getElementById('wp-panel-fs').style.transform='translateX(0)';
+  if(fsMap&&fsMapReady) fsMap.flyTo({center:[wp.lon,wp.lat],zoom:14.5,pitch:62,bearing:-20,duration:1200});
+}
+
+window.closeFsPanel=function(){
+  document.getElementById('wp-panel-fs').style.transform='translateX(100%)';
+};
+
+// GPS en mapa fullscreen
+window.toggleFsGPS=function(){
+  if(!fsGpsOn){
+    if(!navigator.geolocation){toast('GPS no disponible');return;}
+    fsGpsOn=true;
+    fsFollowMode=true;
+    const btn=document.getElementById('fs-gps-btn');
+    const dot=document.getElementById('fs-gps-dot');
+    btn.classList.add('active');
+    btn.innerHTML=`<div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:#fff;animation:gpsPulse 1.5s infinite;flex-shrink:0;"></div> GPS Activo`;
+    document.getElementById('fs-follow-btn').style.borderColor='#4285F4';
+    document.getElementById('fs-follow-btn').style.color='#4285F4';
+    document.getElementById('fs-follow-btn').textContent='⊙ Siguiendo';
+    const hud=document.getElementById('fs-hud');
+    if(hud) hud.style.display='flex';
+    toast('📡 GPS activado');
+
+    fsGpsWatch=navigator.geolocation.watchPosition(pos=>{
+      const{latitude:lat,longitude:lon,accuracy,heading}=pos.coords;
+      if(fsMap&&fsMapReady){
+        if(!fsUserDot||!fsUserDot._map){
+          const el=document.createElement('div');
+          el.style.cssText='width:20px;height:20px;position:relative;display:flex;align-items:center;justify-content:center;';
+          el.innerHTML=`
+            <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(66,133,244,.12);border:1.5px solid rgba(66,133,244,.4);animation:userPulse 2s infinite;"></div>
+            <div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid #fff;box-shadow:0 0 12px rgba(66,133,244,.8);position:relative;z-index:2;"></div>
+            <div id="fs-arrow" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid #4285F4;z-index:3;transition:transform .3s;"></div>
+          `;
+          fsUserDot=new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([lon,lat]).addTo(fsMap);
+        } else {
+          fsUserDot.setLngLat([lon,lat]);
+        }
+        if(heading!==null&&heading!==undefined){
+          const a=document.getElementById('fs-arrow');
+          if(a) a.style.transform=`translateX(-50%) rotate(${heading}deg)`;
+        }
+        if(fsMap.getSource('fs-acc')){
+          fsMap.getSource('fs-acc').setData({type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]}});
+        }
+        if(fsFollowMode){
+          fsMap.easeTo({center:[lon,lat],zoom:14.5,pitch:62,bearing:heading||fsMap.getBearing(),duration:600});
+        }
+        // Tramo recorrido
+        let minD=Infinity,minI=0;
+        ROUTE.forEach(([rl,rlat],i)=>{const d=Math.hypot(lat-rlat,lon-rl);if(d<minD){minD=d;minI=i;}});
+        if(minI>1&&fsMap.getSource('fs-done')){
+          fsMap.getSource('fs-done').setData({type:'Feature',geometry:{type:'LineString',coordinates:ROUTE.slice(0,minI+1)}});
+        }
+        // HUD
+        const dMeta=distKm(lat,lon,-32.69584,-71.40572);
+        const hud=document.getElementById('fs-hud');
+        if(hud) hud.innerHTML=`<span>📍 ${Math.round(accuracy||0)}m precisión</span><span>🏁 Meta: ${dMeta.toFixed(1)} km</span>`;
+      }
+      // Checkpoints
+      WP.forEach(wp=>{
+        if(!fsVisited.has(wp.id)&&distKm(lat,lon,wp.lat,wp.lon)<.15){
+          fsVisited.add(wp.id);
+          toast(`📍 WP${wp.id}: ${wp.name}`);
+          openFsPanel(wp);
+        }
+      });
+    },()=>toast('⚠ Señal GPS perdida — modo offline'),{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
+  } else {
+    fsGpsOn=false;
+    if(fsGpsWatch) navigator.geolocation.clearWatch(fsGpsWatch);
+    const btn=document.getElementById('fs-gps-btn');
+    btn.classList.remove('active');
+    btn.innerHTML=`<div id="fs-gps-dot" style="width:8px;height:8px;border-radius:50%;background:var(--black);flex-shrink:0;"></div> Activar GPS`;
+    const hud=document.getElementById('fs-hud');
+    if(hud) hud.style.display='none';
+    toast('GPS desactivado');
+  }
+};
+
+window.toggleFsFollow=function(){
+  fsFollowMode=!fsFollowMode;
+  const b=document.getElementById('fs-follow-btn');
+  if(fsFollowMode){
+    b.style.borderColor='#4285F4'; b.style.color='#4285F4'; b.textContent='⊙ Siguiendo';
+    if(fsMap&&fsGpsOn&&fsUserDot) fsMap.easeTo({center:fsUserDot.getLngLat(),zoom:14.5,pitch:62,duration:800});
+    toast('🔵 Modo seguimiento activado');
+  } else {
+    b.style.borderColor='var(--border)'; b.style.color='var(--grey)'; b.textContent='⊙ Seguirme';
+  }
+};
+
+window.setFsStyle=function(btn){
+  document.querySelectorAll('[data-fs]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(!fsMap) return;
+  fsMap.setStyle(MAP_STYLES[btn.dataset.fs]);
+  fsMap.once('styledata',()=>{
+    if(!fsMap.getSource('mapbox-dem')){
+      fsMap.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
+      fsMap.setTerrain({source:'mapbox-dem',exaggeration:2.5});
+    }
+    // Re-add route
+    if(!fsMap.getSource('fs-route')){
+      fsMap.addSource('fs-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:ROUTE}}});
+      fsMap.addLayer({id:'fs-route-glow',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':18,'line-opacity':.18,'line-blur':12}});
+      fsMap.addLayer({id:'fs-route-line',type:'line',source:'fs-route',paint:{'line-color':'#FF4500','line-width':4,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});
+    }
+  });
+};
+
+// Cerrar con Escape
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeFullscreenMap();
+});
+</script>
 
 <button id="share-btn" onclick="doShare()">⬡ Compartir ruta</button>
 
