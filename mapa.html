@@ -369,7 +369,7 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
   <!-- Estilos -->
   <div class="mc" id="style-ctrl">
     <div class="style-row">
-      <button class="sbtn on" data-l="topo"      onclick="setStyle(this)">Topo</button>
+      <button class="sbtn on" data-l="osm"       onclick="setStyle(this)">Calles</button>
       <button class="sbtn"    data-l="satellite" onclick="setStyle(this)">Satélite</button>
       <button class="sbtn"    data-l="osm"       onclick="setStyle(this)">Calles</button>
     </div>
@@ -684,13 +684,16 @@ function updateChrono(){
 // MAPA LEAFLET
 // ══════════════════════════════════════════
 const TILES={
-  topo:      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  // OSM — default, más estable y sin rate limit
+  osm:       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  // Satélite ArcGIS — confiable
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  osm:       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+  // Topo — OpenTopoMap puede caerse, es el tercer tier
+  topo:      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
 };
 const START_LAT=PM.waypoints[0].lat, START_LON=PM.waypoints[0].lon;
 const lmap=L.map('leaflet-map',{center:[START_LAT,START_LON],zoom:15,zoomControl:false,attributionControl:false});
-let currentTile=L.tileLayer(TILES.topo,{maxZoom:18}).addTo(lmap);
+let currentTile=L.tileLayer(TILES.osm,{maxZoom:18}).addTo(lmap);
 
 const coords=PM.ruta.map(([lon,lat])=>[lat,lon]);
 L.polyline(coords,{color:'#FF4500',weight:18,opacity:.12}).addTo(lmap);
@@ -712,7 +715,12 @@ window.setStyle=function(btn){
   document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   lmap.removeLayer(currentTile);
-  currentTile=L.tileLayer(TILES[btn.dataset.l],{maxZoom:18}).addTo(lmap);
+  const layer = btn.dataset.l;
+  // Para topo — detectar si falla y fallback a OSM
+  currentTile = L.tileLayer(TILES[layer], {
+    maxZoom:18,
+    errorTileUrl:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+  }).addTo(lmap);
   routeLine.bringToFront(); doneLine.bringToFront();
 };
 
