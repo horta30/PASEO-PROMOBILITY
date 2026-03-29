@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mapa — Paseo Promobility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --black:#080808;--dark:#141414;--border:#2a2a2a;--grey:#666;
+  --orange:#FF4500;--orange2:#FF6B35;--amber:#FFB347;--green:#4CAF50;
+  --blue:#4285F4;--white:#F2EDE4;--red:#e53935;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--black);}
+body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-serif;}
+
+/* ══ SPLASH ══ */
+#splash{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(8,8,8,.82);
+  backdrop-filter:blur(2px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px;transition:opacity .6s ease,visibility .6s ease;
+}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+/* Canvas de ruta — fondo, sin borde, integrado */
+#splash-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  opacity:.18;pointer-events:none;
+}
+
+/* Contenido encima del canvas */
+.splash-inner{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;
+  gap:0;
+}
+
+.splash-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(52px,14vw,100px);
+  line-height:.85;color:var(--white);text-align:center;
+  margin-bottom:8px;
+  text-shadow:0 0 60px rgba(255,69,0,.3);
+}
+.splash-logo span{color:var(--orange);}
+
+.splash-sub{
+  font-size:10px;letter-spacing:.45em;text-transform:uppercase;
+  color:rgba(242,237,228,.45);margin-bottom:52px;text-align:center;
+}
+
+/* CTA unificado — botón + descripción GPS como bloque único */
+.splash-cta-block{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  max-width:340px;width:100%;
+}
+
+.splash-btn{
+  background:var(--orange);color:var(--black);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(20px,5vw,26px);letter-spacing:.06em;
+  padding:18px 44px;border:none;cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+  display:flex;align-items:center;gap:12px;width:100%;justify-content:center;
+  animation:pCTA 2.5s infinite;transition:background .2s;
+}
+.splash-btn:hover{background:var(--orange2);}
+@keyframes pCTA{0%,100%{box-shadow:0 0 0 0 rgba(255,69,0,.4);}50%{box-shadow:0 0 0 20px rgba(255,69,0,0);}}
+.btn-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.5);animation:dp 1s infinite;flex-shrink:0;}
+@keyframes dp{0%,100%{opacity:.5;}50%{opacity:1;}}
+
+/* Descripción GPS integrada bajo el botón */
+.splash-gps-desc{
+  background:rgba(8,8,8,.6);
+  border:1px solid var(--border);
+  border-top:none;
+  padding:12px 18px;
+  width:100%;
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:20px;
+}
+.splash-gps-icon{
+  font-size:16px;flex-shrink:0;margin-top:1px;
+}
+.splash-gps-text{
+  font-size:10px;letter-spacing:.12em;line-height:1.7;
+  color:rgba(242,237,228,.5);
+}
+.splash-gps-text strong{
+  display:block;color:rgba(242,237,228,.75);
+  letter-spacing:.2em;margin-bottom:2px;font-size:10px;
+}
+
+/* ══ TOPBAR ══ */
+#topbar{
+  flex-shrink:0;background:rgba(8,8,8,.96);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 14px;
+  height:60px;display:flex;align-items:center;gap:12px;z-index:1000;
+}
+#back-btn{
+  background:transparent;border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:6px 11px;cursor:pointer;transition:all .2s;
+  text-decoration:none;display:inline-block;white-space:nowrap;flex-shrink:0;
+}
+#back-btn:hover{border-color:var(--orange);color:var(--orange);}
+#chrono-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+#chrono{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(26px,6vw,34px);
+  letter-spacing:.05em;color:var(--white);line-height:1;transition:color .3s;
+}
+#chrono.running{color:var(--green);}
+#chrono.warn{color:var(--amber);}
+#chrono.over{color:var(--red);animation:blink .8s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+#chrono-label{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--grey);}
+#gps-btn{
+  background:var(--orange);color:var(--black);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  padding:8px 14px;border:none;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));
+  transition:background .2s;white-space:nowrap;flex-shrink:0;
+}
+#gps-btn.active{background:var(--green);color:#fff;}
+.gps-dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.4);flex-shrink:0;}
+.gps-dot.on{background:#fff;animation:gpsPulse 1.5s infinite;}
+@keyframes gpsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}50%{box-shadow:0 0 0 6px rgba(255,255,255,0);}}
+
+/* CTA — sobrio, delgado, bajo el topbar */
+#chrono-cta{
+  flex-shrink:0;background:var(--dark);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:7px 16px;cursor:pointer;transition:all .2s;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:clamp(11px,2.8vw,13px);letter-spacing:.22em;text-transform:uppercase;color:var(--grey);
+}
+#chrono-cta.ready{color:var(--orange);border-bottom-color:rgba(255,69,0,.25);}
+#chrono-cta.running{color:var(--green);background:rgba(76,175,80,.04);border-bottom-color:rgba(76,175,80,.25);}
+#chrono-cta.paused{color:var(--amber);border-bottom-color:rgba(255,179,71,.25);}
+.cta-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;animation:ctaPulse 1.5s infinite;}
+@keyframes ctaPulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Barra pace — ultra delgada */
+#pace-bar{flex-shrink:0;height:0;overflow:hidden;
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+  background:rgba(8,8,8,.9);border-bottom:1px solid var(--border);transition:height .3s;}
+#pace-bar.show{height:20px;overflow:visible;}
+#pace-progress{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+#pace-fill{height:100%;background:var(--green);width:0%;transition:width 1s ease,background .5s;}
+#pace-fill.warn{background:var(--amber);}
+#pace-fill.over{background:var(--red);}
+#pace-label{font-size:9px;letter-spacing:.12em;color:var(--grey);white-space:nowrap;flex-shrink:0;}
+
+/* HUD */
+#hud{flex-shrink:0;height:0;overflow:hidden;
+  background:rgba(66,133,244,.06);border-bottom:1px solid rgba(66,133,244,.12);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 12px;font-size:11px;letter-spacing:.14em;color:var(--white);transition:height .3s;}
+#hud.show{height:30px;overflow:visible;}
+
+/* ══ MAPA ══ */
+#map{flex:1;position:relative;overflow:hidden;}
+#map-rotate-wrap{position:absolute;width:200%;height:200%;top:-50%;left:-50%;transform-origin:50% 50%;transition:transform .25s ease;}
+#leaflet-map{position:absolute;width:100%;height:100%;}
+
+/* Brújula */
+#compass{position:absolute;top:12px;left:12px;z-index:600;
+  width:40px;height:40px;background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;}
+#compass:hover{border-color:var(--orange);}
+#compass-svg{transition:transform .3s ease;}
+
+/* Controles */
+.mc{position:absolute;z-index:600;pointer-events:none;}
+.mc *{pointer-events:all;}
+#zoom-ctrl{top:12px;right:12px;display:flex;flex-direction:column;gap:4px;}
+.zbtn{width:36px;height:36px;background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--white);font-size:20px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
+.zbtn:hover{border-color:var(--orange);}
+#follow-ctrl{bottom:66px;right:12px;}
+#follow-btn{background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  padding:8px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+#follow-btn.on{border-color:var(--blue);color:var(--blue);}
+#style-ctrl{bottom:24px;left:12px;}
+.style-row{display:flex;gap:5px;}
+.sbtn{background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  padding:7px 10px;cursor:pointer;transition:all .2s;}
+.sbtn:hover,.sbtn.on{border-color:var(--orange);color:var(--orange);}
+#audio-indicator{position:absolute;bottom:66px;left:12px;z-index:600;
+  background:rgba(8,8,8,.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);padding:7px 12px;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--grey);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+#audio-indicator.on{border-color:var(--green);color:var(--green);}
+
+/* ══ PANEL LATERAL — compacto, X grande fácil de tocar ══ */
+#wp-panel{
+  position:absolute;right:0;top:0;bottom:0;
+  width:min(260px,80vw);
+  background:rgba(8,8,8,.96);backdrop-filter:blur(16px);
+  border-left:1px solid var(--border);
+  transform:translateX(100%);
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+  overflow-y:auto;z-index:700;display:flex;flex-direction:column;
+  -webkit-overflow-scrolling:touch;
+}
+#wp-panel.open{transform:translateX(0);}
+.panel-top{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:rgba(8,8,8,.98);z-index:10;gap:8px;
+}
+.panel-num{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--orange);flex:1;}
+.panel-close{
+  background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--white);
+  width:36px;height:36px;cursor:pointer;font-size:16px;border-radius:50%;flex-shrink:0;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+}
+.panel-close:hover{background:rgba(255,69,0,.15);border-color:var(--orange);color:var(--orange);}
+.panel-body{padding:12px;flex:1;}
+.p-name{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;color:var(--white);margin-bottom:2px;}
+.p-sub{font-size:9px;letter-spacing:.2em;color:var(--orange);text-transform:uppercase;margin-bottom:10px;}
+.p-div{height:1px;background:var(--border);margin:10px 0;}
+.p-desc{font-size:12px;font-weight:300;line-height:1.6;color:rgba(242,237,228,.65);margin-bottom:10px;}
+.p-specs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px;}
+.p-spec{background:var(--dark);padding:7px 9px;border-left:2px solid var(--border);}
+.p-spec.hi{border-left-color:var(--orange);}
+.p-spec-val{font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:var(--white);}
+.p-spec-key{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-top:1px;}
+.p-alert{padding:8px 10px;border-left:3px solid var(--amber);background:rgba(255,179,71,.06);margin-bottom:10px;}
+.p-alert-t{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:2px;}
+.p-alert-b{font-size:11px;font-weight:300;color:rgba(242,237,228,.6);line-height:1.4;}
+.p-nav-lbl{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--grey);margin-bottom:5px;}
+.p-nav-dest{font-size:11px;color:var(--orange);margin-bottom:8px;}
+.nav-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.nav-btn{display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:10px 6px;border:1px solid var(--border);background:var(--dark);
+  color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  text-decoration:none;cursor:pointer;transition:all .2s;}
+.nav-btn.gmaps:hover{border-color:var(--blue);color:var(--blue);}
+.nav-btn.waze:hover{border-color:#63D1F7;color:#63D1F7;}
+.p-coords{font-size:9px;letter-spacing:.08em;color:var(--border);margin-top:6px;}
+
+/* ══ TOAST — top, no tapa nada importante ══ */
+#toast{
+  position:absolute;top:8px;left:50%;
+  transform:translateX(-50%) translateY(-80px);
+  background:rgba(8,8,8,.92);border:1.5px solid var(--orange);
+  backdrop-filter:blur(10px);
+  padding:10px 20px;font-size:12px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--orange);z-index:800;
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+  white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center;
+  border-radius:2px;
+}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.alert{border-color:var(--amber);color:var(--amber);}
+#toast.danger{border-color:var(--red);color:var(--red);}
+
+.leaflet-control-zoom,.leaflet-control-attribution{display:none;}
+@keyframes uPulse{0%,100%{transform:scale(1);opacity:.7;}50%{transform:scale(1.9);opacity:.05;}}
+@keyframes uPulse2{0%,100%{transform:scale(1);opacity:.35;}50%{transform:scale(2.8);opacity:.0;}}
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <!-- Canvas ocupa todo el fondo del splash -->
+  <canvas id="splash-canvas"></canvas>
+
+  <div class="splash-inner">
+    <div class="splash-logo">PASEO<br><span>PROMOBILITY</span></div>
+    <div class="splash-sub">Cordillera de la Costa · V Región · 25.9 km</div>
+
+    <div class="splash-cta-block">
+      <button class="splash-btn" onclick="startNavigation()">
+        <div class="btn-dot"></div>
+        INICIAR RUTA CON GPS
+      </button>
+
+      <div class="splash-gps-desc">
+        <span class="splash-gps-icon">📡</span>
+        <div class="splash-gps-text">
+          <strong>Navegación satelital activada</strong>
+          Al iniciar, el sistema usa el GPS de tu dispositivo para mostrarte en tiempo real sobre la ruta, activar checkpoints con audio y registrar tu tiempo. Conecta el audio del casco antes de partir.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<div id="topbar">
+  <a href="index.html" id="back-btn">← Volver</a>
+  <div id="chrono-wrap">
+    <div id="chrono">00:00</div>
+    <div id="chrono-label">Objetivo: 40–50 min</div>
+  </div>
+  <button id="gps-btn" onclick="toggleGPS()">
+    <div class="gps-dot" id="gps-dot"></div>
+    <span id="gps-label">GPS</span>
+  </button>
+</div>
+<div id="chrono-cta" class="ready" onclick="toggleChrono()">
+  <div class="cta-dot"></div>
+  <span id="chrono-cta-label">INICIAR RUTA</span>
+</div>
+<div id="pace-bar">
+  <div id="pace-progress"><div id="pace-fill"></div></div>
+  <div id="pace-label">0 / 50 min</div>
+</div>
+<div id="hud">
+  <span id="hud-acc"></span>
+  <span id="hud-spd"></span>
+  <span id="hud-meta"></span>
+</div>
+
+<!-- ══ MAPA ══ -->
+<div id="map">
+  <div id="map-rotate-wrap">
+    <div id="leaflet-map"></div>
+  </div>
+  <div id="toast"></div>
+
+  <!-- Brújula -->
+  <div id="compass" onclick="resetNorth()">
+    <svg id="compass-svg" width="22" height="22" viewBox="0 0 22 22">
+      <polygon points="11,2 14,11 11,20 8,11" fill="#FF4500"/>
+      <polygon points="11,2 8,11 11,20 14,11" fill="rgba(255,255,255,0.15)"/>
+      <circle cx="11" cy="11" r="2" fill="white"/>
+    </svg>
+  </div>
+
+  <!-- Zoom -->
+  <div class="mc" id="zoom-ctrl">
+    <button class="zbtn" onclick="lmap.zoomIn()">+</button>
+    <button class="zbtn" onclick="lmap.zoomOut()">−</button>
+  </div>
+
+  <!-- Follow -->
+  <div class="mc" id="follow-ctrl">
+    <button id="follow-btn" class="on" onclick="toggleFollow()">⊙ Siguiendo</button>
+  </div>
+
+  <!-- Audio toggle -->
+  <div id="audio-indicator" onclick="toggleAudio()">🔊 Audio</div>
+
+  <!-- Estilos -->
+  <div class="mc" id="style-ctrl">
+    <div class="style-row">
+      <button class="sbtn on" data-l="topo"      onclick="setStyle(this)">Topo</button>
+      <button class="sbtn"    data-l="satellite" onclick="setStyle(this)">Satélite</button>
+      <button class="sbtn"    data-l="osm"       onclick="setStyle(this)">Calles</button>
+    </div>
+  </div>
+
+
+  <!-- Panel waypoint lateral -->
+  <div id="wp-panel">
+    <div class="panel-top">
+      <span class="panel-num" id="panel-num"></span>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+</div>
+
+<script src="assets/ruta.js"></script>
+<script>
+'use strict';
+
+// ══════════════════════════════════════════
+// AUDIO — Web Speech API (TTS)
+// Funciona con pantalla bloqueada en iOS/Android
+// si el audio ya fue iniciado por el usuario
+// ══════════════════════════════════════════
+let audioEnabled = true;
+let speaking = false;
+
+function speak(text, priority=false){
+  if(!audioEnabled) return;
+  if(!window.speechSynthesis) return;
+  if(priority) window.speechSynthesis.cancel();
+  if(speaking && !priority) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'es-CL';
+  u.rate = 0.95;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  // Preferir voz en español si disponible
+  const voices = window.speechSynthesis.getVoices();
+  const esVoice = voices.find(v=>v.lang.startsWith('es'));
+  if(esVoice) u.voice = esVoice;
+  u.onstart = ()=>speaking=true;
+  u.onend = ()=>speaking=false;
+  u.onerror = ()=>speaking=false;
+  window.speechSynthesis.speak(u);
+}
+
+// iOS necesita que el primer speak venga de un gesto del usuario
+function unlockAudio(){
+  if(window.speechSynthesis){
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  }
+}
+
+window.toggleAudio = function(){
+  audioEnabled = !audioEnabled;
+  const el = document.getElementById('audio-indicator');
+  el.textContent = audioEnabled ? '🔊 Audio' : '🔇 Silencio';
+  el.classList.toggle('on', audioEnabled);
+  if(audioEnabled) speak('Audio activado', true);
+};
+
+// ══════════════════════════════════════════
+// WAKE LOCK — evita que se bloquee la pantalla
+// ══════════════════════════════════════════
+let wakeLock = null;
+
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', ()=>{
+      // Si se libera (ej. llamada entrante) volver a pedirlo
+      setTimeout(requestWakeLock, 2000);
+    });
+  } catch(e){
+    console.warn('WakeLock no disponible:', e);
+  }
+}
+
+// Reactivar wake lock cuando la página vuelve al frente
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && gpsOn) requestWakeLock();
+});
+
+// ══════════════════════════════════════════
+// NOTIFICACIONES PUSH
+// ══════════════════════════════════════════
+async function requestNotifications(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    await Notification.requestPermission();
+  }
+}
+
+function notify(title, body, urgent=false){
+  // Siempre hablar por audio (funciona aunque pantalla bloqueada)
+  speak(body, urgent);
+  // Notificación visual si pantalla bloqueada
+  if(Notification.permission === 'granted'){
+    try{
+      new Notification(title, {
+        body,
+        icon: 'https://horta30.github.io/PASEO-PROMOBILITY/assets/icon.png',
+        badge: 'https://horta30.github.io/PASEO-PROMOBILITY/assets/icon.png',
+        vibrate: urgent ? [200,100,200,100,200] : [200,100,200],
+        requireInteraction: urgent,
+        silent: false // el audio lo maneja TTS
+      });
+    } catch(e){}
+  }
+}
+
+// ══════════════════════════════════════════
+// CRONÓMETRO DE RUTA
+// Objetivo: 40–50 minutos
+// ══════════════════════════════════════════
+let chronoRunning = false;
+let chronoStart   = null;
+let chronoElapsed = 0; // ms
+let chronoInterval= null;
+let paceAlerts    = { min40:false, min45:false, min50:false, min55:false };
+
+const TARGET_MIN = 40;
+const TARGET_MAX = 50;
+
+function toggleChrono(){
+  if(!chronoRunning){
+    startChrono();
+  } else {
+    pauseChrono();
+  }
+}
+
+function startChrono(){
+  chronoRunning=true;
+  chronoStart=Date.now()-chronoElapsed;
+  document.getElementById('chrono').classList.add('running');
+  document.getElementById('pace-bar').classList.add('show');
+  // CTA → EN RUTA
+  const cta=document.getElementById('chrono-cta');
+  cta.className='running';
+  document.getElementById('chrono-cta-label').textContent='EN RUTA — TOCA PARA PAUSAR';
+  chronoInterval=setInterval(updateChrono,1000);
+  if(chronoElapsed===0){
+    speak('Ruta iniciada. Objetivo entre cuarenta y cincuenta minutos. Buena ruta!',true);
+    toast('🏁 Ruta iniciada — objetivo 40–50 min','normal',4000);
+  }
+}
+
+function pauseChrono(){
+  chronoRunning=false;
+  chronoElapsed=Date.now()-chronoStart;
+  clearInterval(chronoInterval);
+  document.getElementById('chrono').classList.remove('running');
+  // CTA → PAUSADO
+  const cta=document.getElementById('chrono-cta');
+  cta.className='paused';
+  document.getElementById('chrono-cta-label').textContent='PAUSADO — TOCA PARA CONTINUAR';
+}
+
+function resetChrono(){
+  pauseChrono();
+  chronoElapsed=0;
+  paceAlerts={min40:false,min45:false,min50:false,min55:false};
+  document.getElementById('chrono').textContent='00:00';
+  document.getElementById('chrono').className='';
+  document.getElementById('chrono-label').textContent='Objetivo: 40–50 min';
+  document.getElementById('pace-fill').style.width='0%';
+  document.getElementById('pace-fill').className='';
+  document.getElementById('pace-label').textContent='0 / 50 min';
+  document.getElementById('pace-bar').classList.remove('show');
+  // CTA → INICIAR
+  const cta=document.getElementById('chrono-cta');
+  cta.className='ready';
+  document.getElementById('chrono-cta-label').textContent='INICIAR RUTA';
+}
+
+function updateChrono(){
+  const elapsed = Date.now() - chronoStart;
+  const totalSec = Math.floor(elapsed / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  const display = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  document.getElementById('chrono').textContent = display;
+
+  // Barra de pace (0 → 50 min = 0 → 100%)
+  const pct = Math.min(min / TARGET_MAX * 100, 100);
+  const fill = document.getElementById('pace-fill');
+  fill.style.width = pct + '%';
+  document.getElementById('pace-label').textContent = `${min} / ${TARGET_MAX} min`;
+
+  // Color de la barra
+  if(min < TARGET_MIN){
+    fill.className = ''; // verde
+    document.getElementById('chrono').className = 'running';
+  } else if(min <= TARGET_MAX){
+    fill.className = 'warn'; // ámbar — zona objetivo
+    document.getElementById('chrono').className = 'running warn';
+  } else {
+    fill.className = 'over'; // rojo — fuera de tiempo
+    document.getElementById('chrono').className = 'running over';
+  }
+
+  // Alertas de pace — solo una vez cada hito
+  if(min >= 40 && !paceAlerts.min40){
+    paceAlerts.min40 = true;
+    notify('⏱ 40 min', 'Cuarenta minutos. Entrando en zona objetivo. Aprieta el ritmo si puedes.', false);
+    toast('⏱ 40 min — zona objetivo alcanzada', 'alert', 5000);
+  }
+  if(min >= 45 && !paceAlerts.min45){
+    paceAlerts.min45 = true;
+    notify('⏱ 45 min', 'Cuarenta y cinco minutos. Cinco minutos para el límite. Mantén el ritmo.', false);
+    toast('⏱ 45 min — 5 min para el límite', 'alert', 5000);
+  }
+  if(min >= 50 && !paceAlerts.min50){
+    paceAlerts.min50 = true;
+    notify('🚨 50 min', 'Cincuenta minutos! Has superado el tiempo máximo de la prueba. Acelera hacia la meta.', true);
+    toast('🚨 50 min — TIEMPO MÁXIMO SUPERADO', 'danger', 8000);
+  }
+  if(min >= 55 && !paceAlerts.min55){
+    paceAlerts.min55 = true;
+    notify('🚨 55 min', 'Cincuenta y cinco minutos. Estás cinco minutos sobre el tiempo máximo. Dirígete a la meta.', true);
+    toast('🚨 +5 min sobre el límite', 'danger', 8000);
+  }
+}
+
+// ══════════════════════════════════════════
+// SPLASH CANVAS
+// ══════════════════════════════════════════
+(function initSplash(){
+  const c=document.getElementById('splash-canvas');
+  function resize(){
+    c.width=window.innerWidth;
+    c.height=window.innerHeight;
+    drawFrame();
+  }
+  const mnLon=-71.415,mxLon=-71.318,mnLat=-32.722,mxLat=-32.668;
+  function tx(lon){ return (lon-mnLon)/(mxLon-mnLon)*c.width; }
+  function ty(lat){ return (1-(lat-mnLat)/(mxLat-mnLat))*c.height; }
+
+  // Márgenes para que la ruta no ocupe todo el canvas
+  const pad = 0.15;
+  function txp(lon){ return pad*c.width + (lon-mnLon)/(mxLon-mnLon)*(c.width*(1-pad*2)); }
+  function typ(lat){ return pad*c.height + (1-(lat-mnLat)/(mxLat-mnLat))*(c.height*(1-pad*2)); }
+
+  let prog=0;
+  function drawFrame(){
+    const W=c.width, H=c.height;
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+
+    // Curvas de nivel muy sutiles
+    for(let i=0;i<12;i++){
+      ctx.beginPath();
+      const y0=H*.05+i*H*.09,amp=8+i*2.5;
+      for(let x=0;x<=W;x+=6) ctx.lineTo(x,y0+Math.sin(x/W*Math.PI*4+i*.9)*amp);
+      ctx.strokeStyle=`rgba(50,100,40,${.055-i*.003})`;
+      ctx.lineWidth=1;ctx.stroke();
+    }
+
+    // Ruta — glow
+    ctx.beginPath();
+    PM.ruta.forEach(([ln,la],i)=>{
+      const x=txp(ln),y=typ(la);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='rgba(255,69,0,.12)';
+    ctx.lineWidth=16;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.filter='blur(6px)';ctx.stroke();ctx.filter='none';
+
+    // Ruta — línea
+    ctx.beginPath();
+    PM.ruta.forEach(([ln,la],i)=>{
+      const x=txp(ln),y=typ(la);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='rgba(255,69,0,.6)';
+    ctx.lineWidth=1.5;ctx.stroke();
+
+    // Waypoints
+    PM.waypoints.forEach(wp=>{
+      ctx.beginPath();
+      ctx.arc(txp(wp.lon),typ(wp.lat),3,0,Math.PI*2);
+      ctx.fillStyle=wp.type==='summit'?'rgba(255,179,71,.7)':
+                    wp.type==='startend'?'rgba(76,175,80,.7)':'rgba(255,69,0,.6)';
+      ctx.fill();
+    });
+
+    // Punto animado
+    prog=(prog+.003)%1;
+    const [ln,la]=PM.ruta[Math.floor(prog*PM.ruta.length)];
+    const px=txp(ln),py=typ(la);
+    ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);
+    ctx.fillStyle='rgba(66,133,244,.12)';ctx.fill();
+    ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(66,133,244,.8)';ctx.fill();
+    ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.5;ctx.stroke();
+
+    if(!document.getElementById('splash').classList.contains('hidden'))
+      requestAnimationFrame(drawFrame);
+  }
+  window.addEventListener('resize',resize);
+  resize();
+})();
+
+// ══════════════════════════════════════════
+// MAPA LEAFLET
+// ══════════════════════════════════════════
+const TILES={
+  topo:      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  osm:       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+};
+const START_LAT=PM.waypoints[0].lat, START_LON=PM.waypoints[0].lon;
+const lmap=L.map('leaflet-map',{center:[START_LAT,START_LON],zoom:15,zoomControl:false,attributionControl:false});
+let currentTile=L.tileLayer(TILES.topo,{maxZoom:18}).addTo(lmap);
+
+const coords=PM.ruta.map(([lon,lat])=>[lat,lon]);
+L.polyline(coords,{color:'#FF4500',weight:18,opacity:.12}).addTo(lmap);
+const routeLine=L.polyline(coords,{color:'#FF4500',weight:4,opacity:.95}).addTo(lmap);
+const doneLine =L.polyline([[START_LAT,START_LON]],{color:'rgba(255,255,255,.3)',weight:5}).addTo(lmap);
+
+PM.waypoints.forEach(wp=>{
+  const col=wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';
+  const icon=L.divIcon({className:'',
+    html:`<div style="width:28px;height:28px;background:${col};
+      clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));
+      display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px ${col}88;cursor:pointer;">
+      <span style="font-family:sans-serif;font-weight:bold;font-size:11px;color:#000;">${wp.id}</span></div>`,
+    iconSize:[28,28],iconAnchor:[14,14]});
+  L.marker([wp.lat,wp.lon],{icon}).addTo(lmap).on('click',()=>openPanel(wp));
+});
+
+window.setStyle=function(btn){
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  lmap.removeLayer(currentTile);
+  currentTile=L.tileLayer(TILES[btn.dataset.l],{maxZoom:18}).addTo(lmap);
+  routeLine.bringToFront(); doneLine.bringToFront();
+};
+
+// ══════════════════════════════════════════
+// ROTACIÓN TIPO WAZE
+// ══════════════════════════════════════════
+let currentBearing=0;
+function rotateTo(bearing){
+  currentBearing=((bearing%360)+360)%360;
+  document.getElementById('map-rotate-wrap').style.transform=`rotate(${-currentBearing}deg)`;
+  document.getElementById('compass-svg').style.transform=`rotate(${currentBearing}deg)`;
+}
+window.resetNorth=function(){ rotateTo(0); toast('↑ Norte', 'normal', 2000); };
+
+// ══════════════════════════════════════════
+// GPS
+// ══════════════════════════════════════════
+let gpsOn=false, gpsWatch=null, userMarker=null;
+let followMode=true, rotateMode=true, visited=new Set(), lastBearing=0;
+
+function makeUserIcon(){
+  return L.divIcon({className:'',
+    html:`<div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;width:46px;height:46px;border-radius:50%;
+        background:rgba(66,133,244,.08);border:1.5px solid rgba(66,133,244,.3);animation:uPulse 2s infinite;"></div>
+      <div style="position:absolute;width:66px;height:66px;border-radius:50%;
+        background:rgba(66,133,244,.03);animation:uPulse2 2.5s .5s infinite;"></div>
+      <div id="u-arrow" style="position:absolute;top:-14px;left:50%;
+        transform:translateX(-50%);width:0;height:0;
+        border-left:7px solid transparent;border-right:7px solid transparent;
+        border-bottom:15px solid #4285F4;
+        filter:drop-shadow(0 0 4px rgba(66,133,244,.9));transition:transform .25s;z-index:3;"></div>
+      <div style="width:16px;height:16px;border-radius:50%;
+        background:#4285F4;border:3px solid #fff;box-shadow:0 0 12px rgba(66,133,244,.9);z-index:2;"></div>
+    </div>`,
+    iconSize:[24,24],iconAnchor:[12,12]});
+}
+
+window.toggleGPS=function(){
+  if(!gpsOn){
+    if(!navigator.geolocation){ toast('GPS no disponible','danger',3000); return; }
+    gpsOn=true;
+    document.getElementById('gps-dot').classList.add('on');
+    document.getElementById('gps-btn').classList.add('active');
+    document.getElementById('gps-label').textContent='ACTIVO';
+    document.getElementById('hud').classList.add('show');
+    requestWakeLock();
+
+    gpsWatch=navigator.geolocation.watchPosition(pos=>{
+      const{latitude:lat,longitude:lon,accuracy,heading,speed}=pos.coords;
+
+      if(!userMarker){
+        userMarker=L.marker([lat,lon],{icon:makeUserIcon(),zIndexOffset:1000}).addTo(lmap);
+      } else {
+        userMarker.setLatLng([lat,lon]);
+      }
+
+      const bear=(heading!==null&&heading!==undefined)?heading:lastBearing;
+      if(heading!==null&&heading!==undefined) lastBearing=heading;
+
+      const arrowEl=document.getElementById('u-arrow');
+      if(arrowEl) arrowEl.style.transform=`translateX(-50%) rotate(${bear-currentBearing}deg)`;
+
+      if(rotateMode&&followMode) rotateTo(bear);
+      if(followMode) lmap.panTo([lat,lon],{animate:true,duration:.35,easeLinearity:1});
+
+      // Tramo recorrido
+      let minD=Infinity,minI=0;
+      coords.forEach(([la,lo],i)=>{const d=Math.hypot(lat-la,lon-lo);if(d<minD){minD=d;minI=i;}});
+      if(minI>1) doneLine.setLatLngs(coords.slice(0,minI+1));
+
+      // HUD
+      const dMeta=distKm(lat,lon,PM.meta_lat,PM.meta_lon);
+      const spdKmh=(speed||0)*3.6;
+      document.getElementById('hud-acc').textContent=`±${Math.round(accuracy||0)}m`;
+      document.getElementById('hud-spd').textContent=`${spdKmh>1?spdKmh.toFixed(0):'--'} km/h`;
+      document.getElementById('hud-meta').textContent=`🏁 ${dMeta.toFixed(1)} km`;
+
+      // Checkpoints con audio — detecta por trigger (400m antes del WP)
+      PM.waypoints.forEach(wp=>{
+        const tLat = wp.trigger_lat || wp.lat;
+        const tLon = wp.trigger_lon || wp.lon;
+        if(!visited.has(wp.id) && distKm(lat,lon,tLat,tLon)<0.12){
+          visited.add(wp.id);
+          const msg=buildWPAudio(wp);
+          notify(`📍 WP${wp.id}: ${wp.name}`, msg, wp.type==='summit');
+          toast(`📍 WP${wp.id}: ${wp.name}`, wp.type==='summit'?'danger':'alert', 5000);
+          setTimeout(()=>openPanel(wp), 800);
+          // Iniciar cronómetro automáticamente al pasar el WP1
+          if(wp.id===1&&!chronoRunning&&chronoElapsed===0) startChrono();
+        }
+      });
+
+    },()=>{
+      speak('Señal GPS perdida. Continuando en modo offline.');
+      toast('⚠ Señal GPS perdida','alert',4000);
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:2000});
+
+  } else {
+    gpsOn=false;
+    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
+    if(wakeLock) wakeLock.release();
+    document.getElementById('gps-dot').classList.remove('on');
+    document.getElementById('gps-btn').classList.remove('active');
+    document.getElementById('gps-label').textContent='GPS';
+    document.getElementById('hud').classList.remove('show');
+    rotateTo(0);
+    toast('GPS desactivado','normal',2000);
+  }
+};
+
+// Texto de audio para cada waypoint
+function buildWPAudio(wp){
+  const base={
+    1:'Bienvenido al Paseo Promobility. Iniciando ruta circular. Veinticinco coma nueve kilómetros. Objetivo entre cuarenta y cincuenta minutos.',
+    2:'Waypoint dos. Ascenso cordillera. Seiscientos tres metros. Curvas cerradas. La cresta y la bajada peligrosa están a menos de un kilómetro. Velocidad recomendada: cuarenta a sesenta kilómetros por hora.',
+    3:'STOP. Bajada peligrosa. Para la moto. Revisa frenos. Espera al grupo antes de descender.',
+    4:'Waypoint cuatro. Intersección La Canela. GIRAR A LA IZQUIERDA. Reducir velocidad. Verificar que todo el grupo haya pasado.',
+    5:'Waypoint cinco. La Canela. Descenso activo. Posible grava suelta en curvas. Atención a animales.',
+    6:'Waypoint seis. Descenso técnico. Pendiente pronunciada. Velocidad controlada.',
+    7:'Waypoint siete. Rungue Sur. Valle interior. Velocidad prudente. Posible cruce de animales.',
+    8:'Waypoint ocho. Intersección Caballito de Palo Alto. Sigue recto hacia el descenso final.',
+    9:'Waypoint nueve. Zona off road. Terreno irregular. Solo motos adventure.',
+    10:'Waypoint diez. Intersección ruta principal. Precaución con el tráfico. La meta está a un coma ocho kilómetros.'
+  };
+  return base[wp.id] || `Waypoint ${wp.id}. ${wp.name}. ${wp.sub}.`;
+}
+
+lmap.on('dragstart',()=>{
+  followMode=false; rotateMode=false;
+  const b=document.getElementById('follow-btn');
+  b.classList.remove('on'); b.textContent='⊙ Seguirme';
+});
+
+window.toggleFollow=function(){
+  followMode=!followMode; rotateMode=followMode;
+  const b=document.getElementById('follow-btn');
+  if(followMode){
+    b.classList.add('on'); b.textContent='⊙ Siguiendo';
+    if(userMarker) lmap.panTo(userMarker.getLatLng());
+    rotateTo(lastBearing);
+  } else {
+    b.classList.remove('on'); b.textContent='⊙ Seguirme';
+    rotateTo(0);
+  }
+};
+
+// ══════════════════════════════════════════
+// SPLASH — start
+// ══════════════════════════════════════════
+window.startNavigation=async function(){
+  unlockAudio(); // desbloquear TTS con gesto del usuario
+  await requestNotifications();
+  document.getElementById('splash').classList.add('hidden');
+  speak('Iniciando navegación Paseo Promobility. Conecta tu audio al casco o auriculares ahora.', true);
+  toast('🎙 Conecta el audio del casco','normal',4000);
+  setTimeout(toggleGPS, 1500);
+};
+
+// Si GPS falla — fallback silencioso mostrando la ruta completa
+function skipGPS(){
+  lmap.fitBounds(routeLine.getBounds(),{padding:[40,40]});
+  toast('GPS no disponible — explora la ruta manualmente','alert',4000);
+}
+
+
+// ══════════════════════════════════════════
+// PANEL WAYPOINT LATERAL
+// ══════════════════════════════════════════
+let activeWP=null;
+
+function openPanel(wp){
+  activeWP=wp.id;
+  document.getElementById('panel-num').textContent=`Waypoint ${wp.id} / 10`;
+  document.getElementById('panel-body').innerHTML=`
+    <div class="p-name">${wp.name}</div>
+    <div class="p-sub">${wp.sub}</div>
+    <div class="p-div"></div>
+    <p class="p-desc">${wp.desc}</p>
+    <div class="p-specs">
+      ${wp.specs.map(([v,k],i)=>`<div class="p-spec${i<2?' hi':''}">
+        <div class="p-spec-val">${v}</div><div class="p-spec-key">${k}</div></div>`).join('')}
+    </div>
+    <div class="p-alert">
+      <div class="p-alert-t">${wp.alert.t}</div>
+      <div class="p-alert-b">${wp.alert.b}</div>
+    </div>
+    <div class="p-nav-lbl">🏁 Meta</div>
+    <div class="p-nav-dest">Caballito de Palo</div>
+    <div class="nav-row">
+      <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=${PM.meta_lat},${PM.meta_lon}&travelmode=driving" target="_blank">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps
+      </a>
+      <a class="nav-btn waze" href="https://waze.com/ul?ll=${PM.meta_lat},${PM.meta_lon}&navigate=yes" target="_blank">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>Waze
+      </a>
+    </div>
+    <button onclick="resetChrono()" style="width:100%;padding:8px;background:none;border:1px solid var(--border);
+      color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:10px;
+      letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-top:4px;">↺ Reiniciar</button>
+    <div class="p-coords">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m</div>`;
+  document.getElementById('wp-panel').classList.add('open');
+  if(lmap) lmap.panTo([wp.lat,wp.lon],{animate:true,duration:.5});
+}
+
+function closePanel(){
+  document.getElementById('wp-panel').classList.remove('open');
+  activeWP=null;
+}
+(function(){
+  const wpId=parseInt(new URLSearchParams(location.search).get('wp'));
+  if(wpId){ const wp=PM.waypoints.find(w=>w.id===wpId); if(wp) setTimeout(()=>openPanel(wp),1000); }
+})();
+
+// ══════════════════════════════════════════
+// SERVICE WORKER — registro y offline
+// ══════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/PASEO-PROMOBILITY/sw.js', {scope:'/PASEO-PROMOBILITY/'})
+    .then(reg => {
+      console.log('[App] SW registrado:', reg.scope);
+      // Escuchar progreso de descarga
+      navigator.serviceWorker.addEventListener('message', event => {
+        const { type, cached, total, failed } = event.data || {};
+        if(type === 'CACHE_COMPLETE'){
+          toast('✓ Mapa disponible sin internet', 'normal', 4000);
+        }
+      });
+    })
+    .catch(err => console.warn('[App] SW error:', err));
+}
+
+
+function distKm(la1,lo1,la2,lo2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+let toastT;
+function toast(msg, type='normal', duration=3200){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='show'+(type==='alert'?' alert':type==='danger'?' danger':'');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{el.className='';},duration);
+}
+</script>
+</body>
+</html>
