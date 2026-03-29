@@ -101,54 +101,94 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
 }
 
 /* ══ TOPBAR ══ */
-#topbar{flex-shrink:0;background:rgba(8,8,8,.96);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);padding:0 12px;height:50px;
-  display:flex;align-items:center;gap:10px;z-index:1000;}
-#back-btn{background:transparent;border:1px solid var(--border);color:var(--grey);
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.12em;
-  text-transform:uppercase;padding:6px 10px;cursor:pointer;transition:all .2s;
-  text-decoration:none;display:inline-block;white-space:nowrap;flex-shrink:0;}
+#topbar{
+  flex-shrink:0;
+  background:rgba(8,8,8,.97);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  z-index:1000;
+}
+
+/* Fila superior — back + chrono + gps */
+.topbar-row1{
+  display:flex;align-items:center;gap:10px;
+  padding:0 12px;height:44px;
+}
+
+#back-btn{
+  background:transparent;border:1px solid var(--border);color:var(--grey);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;padding:5px 10px;cursor:pointer;transition:all .2s;
+  text-decoration:none;display:inline-block;white-space:nowrap;flex-shrink:0;
+}
 #back-btn:hover{border-color:var(--orange);color:var(--orange);}
 
-/* Cronómetro */
-#chrono-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-#chrono{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.05em;
-  color:var(--white);line-height:1;cursor:pointer;}
+/* Cronómetro — centro, GRANDE */
+#chrono-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;gap:1px;
+}
+#chrono{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(28px,7vw,38px);
+  letter-spacing:.04em;color:var(--white);line-height:1;
+  transition:color .3s;
+}
 #chrono.running{color:var(--green);}
 #chrono.warn{color:var(--amber);}
 #chrono.over{color:var(--red);animation:blink .8s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
-#chrono-label{font-size:8px;letter-spacing:.25em;text-transform:uppercase;
-  color:var(--grey);text-align:center;}
+#chrono-label{
+  font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--grey);
+}
 
-#gps-btn{background:var(--orange);color:var(--black);
+/* GPS btn */
+#gps-btn{
+  background:var(--orange);color:var(--black);
   font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase;
   padding:7px 12px;border:none;cursor:pointer;
   display:flex;align-items:center;gap:6px;
   clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));
-  transition:background .2s;white-space:nowrap;flex-shrink:0;}
+  transition:background .2s;white-space:nowrap;flex-shrink:0;
+}
 #gps-btn.active{background:var(--green);color:#fff;}
 .gps-dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.4);flex-shrink:0;}
 .gps-dot.on{background:#fff;animation:gpsPulse 1.5s infinite;}
 @keyframes gpsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.5);}50%{box-shadow:0 0 0 6px rgba(255,255,255,0);}}
 
-/* ══ HUD ══ */
-#hud{flex-shrink:0;height:0;overflow:hidden;
-  background:rgba(66,133,244,.07);border-bottom:1px solid rgba(66,133,244,.15);
-  display:flex;align-items:center;justify-content:space-around;
-  padding:0 12px;font-size:11px;letter-spacing:.14em;color:var(--white);
-  transition:height .3s;}
-#hud.show{height:32px;overflow:visible;}
+/* CTA inicio/pausa — fila completa, grande */
+#chrono-cta{
+  margin:0 12px 10px;
+  background:var(--dark);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:10px 16px;cursor:pointer;
+  transition:border-color .2s,background .2s;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(16px,4.5vw,22px);
+  letter-spacing:.08em;color:var(--grey);
+}
+#chrono-cta:hover{border-color:var(--orange);color:var(--orange);}
+#chrono-cta.ready{border-color:var(--orange);color:var(--orange);background:rgba(255,69,0,.06);}
+#chrono-cta.running{border-color:var(--green);color:var(--green);background:rgba(76,175,80,.06);}
+#chrono-cta.paused{border-color:var(--amber);color:var(--amber);background:rgba(255,179,71,.06);}
+.cta-dot{
+  width:10px;height:10px;border-radius:50%;background:currentColor;
+  animation:ctaPulse 1.5s infinite;flex-shrink:0;
+}
+@keyframes ctaPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
 
-/* ══ BARRA PACE ══ */
-#pace-bar{flex-shrink:0;height:0;overflow:hidden;
-  background:var(--dark);border-bottom:1px solid var(--border);
+/* ══ BARRA PACE — debajo del CTA, prominente ══ */
+#pace-bar{
+  flex-shrink:0;height:0;overflow:hidden;
+  background:var(--dark);border-top:1px solid var(--border);
   display:flex;align-items:center;padding:0 12px;gap:10px;
-  transition:height .3s;}
-#pace-bar.show{height:28px;overflow:visible;}
-#pace-progress{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
-#pace-fill{height:100%;background:var(--green);width:0%;transition:width .5s,background .5s;}
+  transition:height .3s;
+}
+#pace-bar.show{height:26px;overflow:visible;}
+#pace-progress{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+#pace-fill{height:100%;background:var(--green);width:0%;transition:width .8s ease,background .5s;}
 #pace-fill.warn{background:var(--amber);}
 #pace-fill.over{background:var(--red);}
 #pace-label{font-size:10px;letter-spacing:.15em;color:var(--grey);white-space:nowrap;flex-shrink:0;}
@@ -196,52 +236,139 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
   color:var(--grey);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
 #audio-indicator.on{border-color:var(--green);color:var(--green);}
 
-/* ══ PANEL ══ */
-#wp-panel{position:absolute;right:0;top:0;bottom:0;width:min(300px,88vw);
-  background:rgba(8,8,8,.97);backdrop-filter:blur(16px);border-left:1px solid var(--border);
-  transform:translateX(100%);transition:transform .38s cubic-bezier(.16,1,.3,1);
-  overflow-y:auto;z-index:700;display:flex;flex-direction:column;}
-#wp-panel.open{transform:translateX(0);}
-.panel-top{padding:14px 16px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;
-  position:sticky;top:0;background:rgba(8,8,8,.98);z-index:10;}
-.panel-num{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--orange);}
-.panel-close{background:none;border:1px solid var(--border);color:var(--grey);
-  width:26px;height:26px;cursor:pointer;font-size:12px;transition:border-color .2s;}
-.panel-close:hover{border-color:var(--orange);color:var(--orange);}
-.panel-body{padding:18px;flex:1;}
-.p-name{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);margin-bottom:3px;}
-.p-sub{font-size:10px;letter-spacing:.2em;color:var(--orange);text-transform:uppercase;margin-bottom:14px;}
-.p-div{height:1px;background:var(--border);margin:12px 0;}
+#wp-sheet{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  z-index:700;
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.16,1,.3,1);
+  pointer-events:none;
+}
+#wp-sheet.open{
+  transform:translateY(0);
+  pointer-events:all;
+}
+
+/* Handle de drag */
+.sheet-handle-wrap{
+  display:flex;justify-content:center;
+  padding:10px 0 0;
+  cursor:pointer;
+}
+.sheet-handle{
+  width:36px;height:4px;
+  background:rgba(255,255,255,.2);
+  border-radius:2px;
+}
+
+/* Zona de preview — siempre visible al abrir, resumen compacto */
+.sheet-peek{
+  background:rgba(10,10,10,.96);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:12px 16px 14px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;
+}
+.sheet-peek-badge{
+  width:36px;height:36px;flex-shrink:0;
+  clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--black);
+}
+.sheet-peek-info{flex:1;min-width:0;}
+.sheet-peek-name{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;
+  color:var(--white);line-height:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sheet-peek-sub{
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--orange);margin-top:2px;
+}
+.sheet-peek-right{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
+}
+.sheet-peek-ele{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;
+}
+.sheet-peek-km{
+  font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--grey);
+}
+.sheet-close-btn{
+  background:none;border:1px solid var(--border);color:var(--grey);
+  width:28px;height:28px;flex-shrink:0;cursor:pointer;font-size:13px;
+  transition:border-color .2s;border-radius:50%;
+}
+.sheet-close-btn:hover{border-color:var(--orange);color:var(--orange);}
+
+/* Alert banner — visible en el peek */
+.sheet-alert-banner{
+  background:rgba(255,179,71,.08);
+  border-top:1px solid rgba(255,179,71,.2);
+  padding:8px 16px;
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;
+}
+.sheet-alert-icon{font-size:14px;flex-shrink:0;}
+.sheet-alert-text{font-size:11px;letter-spacing:.1em;color:var(--amber);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Detalle expandido — deslizable hacia arriba */
+.sheet-detail{
+  background:rgba(10,10,10,.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  max-height:60vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+}
+.sheet-detail.expanded{transform:translateY(0);}
+
+.sheet-detail-inner{padding:16px;}
 .p-desc{font-size:13px;font-weight:300;line-height:1.7;color:rgba(242,237,228,.7);margin-bottom:14px;}
-.p-specs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;}
-.p-spec{background:var(--dark);padding:9px 11px;border-left:2px solid var(--border);}
+.p-specs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px;}
+@media(max-width:400px){.p-specs{grid-template-columns:repeat(2,1fr);}}
+.p-spec{background:var(--dark);padding:8px 10px;border-left:2px solid var(--border);}
 .p-spec.hi{border-left-color:var(--orange);}
-.p-spec-val{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;color:var(--white);}
-.p-spec-key{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-top:2px;}
-.p-alert{padding:10px 12px;border-left:3px solid var(--amber);background:rgba(255,179,71,.06);margin-bottom:12px;}
-.p-alert-t{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:3px;}
-.p-alert-b{font-size:12px;font-weight:300;color:rgba(242,237,228,.65);line-height:1.5;}
-.p-nav-lbl{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--grey);margin-bottom:6px;}
-.p-nav-dest{font-size:12px;color:var(--orange);margin-bottom:10px;}
+.p-spec-val{font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:var(--white);}
+.p-spec-key{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-top:2px;}
+.p-nav-lbl{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--grey);margin-bottom:6px;}
+.p-nav-dest{font-size:11px;color:var(--orange);margin-bottom:8px;}
 .nav-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
 .nav-btn{display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px 8px;border:1px solid var(--border);background:var(--dark);
+  padding:12px 8px;border:1px solid var(--border);background:var(--dark);
   color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:11px;
   font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  text-decoration:none;cursor:pointer;transition:all .2s;}
-.nav-btn.gmaps:hover{border-color:var(--blue);color:var(--blue);}
-.nav-btn.waze:hover{border-color:#63D1F7;color:#63D1F7;}
-.p-coords{font-size:10px;letter-spacing:.1em;color:var(--border);}
+  text-decoration:none;cursor:pointer;transition:all .2s;border-radius:2px;}
+.nav-btn.gmaps:hover,.nav-btn.gmaps:active{border-color:var(--blue);color:var(--blue);}
+.nav-btn.waze:hover,.nav-btn.waze:active{border-color:#63D1F7;color:#63D1F7;}
+.p-coords{font-size:9px;letter-spacing:.1em;color:var(--border);margin-top:8px;}
 
-/* ══ AUDIO TOAST — más grande para ser visible mientras manejas ══ */
-#toast{position:absolute;top:8px;left:50%;
+/* Botón expandir/colapsar detalle */
+.sheet-expand-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px;cursor:pointer;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--grey);
+  border-top:1px solid var(--border);background:rgba(10,10,10,.97);
+}
+.sheet-expand-btn span{transition:transform .3s;}
+.sheet-expand-btn.expanded span{transform:rotate(180deg);}
+
+/* ══ TOAST — top, no tapa nada importante ══ */
+#toast{
+  position:absolute;top:8px;left:50%;
   transform:translateX(-50%) translateY(-80px);
-  background:var(--dark);border:2px solid var(--orange);
-  padding:12px 24px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+  background:rgba(8,8,8,.92);border:1.5px solid var(--orange);
+  backdrop-filter:blur(10px);
+  padding:10px 20px;font-size:12px;letter-spacing:.15em;text-transform:uppercase;
   color:var(--orange);z-index:800;
   transition:transform .35s cubic-bezier(.16,1,.3,1);
-  white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center;}
+  white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center;
+  border-radius:2px;
+}
 #toast.show{transform:translateX(-50%) translateY(0);}
 #toast.alert{border-color:var(--amber);color:var(--amber);}
 #toast.danger{border-color:var(--red);color:var(--red);}
@@ -282,18 +409,29 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
 
 <!-- ══ TOPBAR ══ -->
 <div id="topbar">
-  <a href="index.html" id="back-btn">← Volver</a>
-
-  <!-- Cronómetro central -->
-  <div id="chrono-wrap" onclick="toggleChrono()">
-    <div id="chrono">00:00</div>
-    <div id="chrono-label">Toca para iniciar</div>
+  <div class="topbar-row1">
+    <a href="index.html" id="back-btn">← Volver</a>
+    <div id="chrono-wrap">
+      <div id="chrono">00:00</div>
+      <div id="chrono-label">Objetivo: 40–50 min</div>
+    </div>
+    <button id="gps-btn" onclick="toggleGPS()">
+      <div class="gps-dot" id="gps-dot"></div>
+      <span id="gps-label">GPS</span>
+    </button>
   </div>
 
-  <button id="gps-btn" onclick="toggleGPS()">
-    <div class="gps-dot" id="gps-dot"></div>
-    <span id="gps-label">GPS</span>
-  </button>
+  <!-- CTA inicio/pausa — toca para controlar el cronómetro -->
+  <div id="chrono-cta" class="ready" onclick="toggleChrono()">
+    <div class="cta-dot"></div>
+    <span id="chrono-cta-label">INICIAR RUTA</span>
+  </div>
+
+  <!-- Barra de pace -->
+  <div id="pace-bar">
+    <div id="pace-progress"><div id="pace-fill"></div></div>
+    <div id="pace-label">0 / 50 min</div>
+  </div>
 </div>
 
 <!-- ══ HUD ══ -->
@@ -348,13 +486,43 @@ body{display:flex;flex-direction:column;font-family:'Barlow Condensed',sans-seri
     </div>
   </div>
 
-  <!-- Panel waypoint -->
-  <div id="wp-panel">
-    <div class="panel-top">
-      <span class="panel-num" id="panel-num"></span>
-      <button class="panel-close" onclick="closePanel()">✕</button>
+
+  <!-- ══ BOTTOM SHEET WAYPOINT ══ -->
+  <div id="wp-sheet">
+    <div class="sheet-handle-wrap" onclick="toggleSheetDetail()">
+      <div class="sheet-handle"></div>
     </div>
-    <div class="panel-body" id="panel-body"></div>
+
+    <!-- PEEK — siempre visible, resumen compacto -->
+    <div class="sheet-peek" onclick="toggleSheetDetail()">
+      <div class="sheet-peek-badge" id="sheet-badge">1</div>
+      <div class="sheet-peek-info">
+        <div class="sheet-peek-name" id="sheet-name">—</div>
+        <div class="sheet-peek-sub" id="sheet-sub">—</div>
+      </div>
+      <div class="sheet-peek-right">
+        <div class="sheet-peek-ele" id="sheet-ele">—</div>
+        <div class="sheet-peek-km" id="sheet-km">—</div>
+      </div>
+      <button class="sheet-close-btn" onclick="closePanel(event)">✕</button>
+    </div>
+
+    <!-- Alert banner -->
+    <div class="sheet-alert-banner" id="sheet-alert" onclick="toggleSheetDetail()">
+      <span class="sheet-alert-icon" id="sheet-alert-icon">⚠</span>
+      <span class="sheet-alert-text" id="sheet-alert-text">—</span>
+    </div>
+
+    <!-- Botón expandir -->
+    <div class="sheet-expand-btn" id="sheet-expand-btn" onclick="toggleSheetDetail()">
+      <span id="sheet-expand-arrow">▲</span>
+      <span id="sheet-expand-label">Ver detalles</span>
+    </div>
+
+    <!-- DETALLE — se expande hacia arriba -->
+    <div class="sheet-detail" id="sheet-detail">
+      <div class="sheet-detail-inner" id="sheet-detail-inner"></div>
+    </div>
   </div>
 </div>
 
@@ -480,37 +648,47 @@ function toggleChrono(){
 }
 
 function startChrono(){
-  chronoRunning = true;
-  chronoStart   = Date.now() - chronoElapsed;
+  chronoRunning=true;
+  chronoStart=Date.now()-chronoElapsed;
   document.getElementById('chrono').classList.add('running');
-  document.getElementById('chrono-label').textContent = 'En ruta — toca para pausar';
   document.getElementById('pace-bar').classList.add('show');
-  chronoInterval = setInterval(updateChrono, 1000);
-  if(chronoElapsed === 0){
-    speak('Ruta iniciada. Objetivo entre cuarenta y cincuenta minutos. Buena ruta!', true);
-    toast('🏁 Ruta iniciada — objetivo 40–50 min', 'normal', 4000);
+  // CTA → EN RUTA
+  const cta=document.getElementById('chrono-cta');
+  cta.className='running';
+  document.getElementById('chrono-cta-label').textContent='EN RUTA — TOCA PARA PAUSAR';
+  chronoInterval=setInterval(updateChrono,1000);
+  if(chronoElapsed===0){
+    speak('Ruta iniciada. Objetivo entre cuarenta y cincuenta minutos. Buena ruta!',true);
+    toast('🏁 Ruta iniciada — objetivo 40–50 min','normal',4000);
   }
 }
 
 function pauseChrono(){
-  chronoRunning = false;
-  chronoElapsed = Date.now() - chronoStart;
+  chronoRunning=false;
+  chronoElapsed=Date.now()-chronoStart;
   clearInterval(chronoInterval);
   document.getElementById('chrono').classList.remove('running');
-  document.getElementById('chrono-label').textContent = 'Pausado — toca para continuar';
+  // CTA → PAUSADO
+  const cta=document.getElementById('chrono-cta');
+  cta.className='paused';
+  document.getElementById('chrono-cta-label').textContent='PAUSADO — TOCA PARA CONTINUAR';
 }
 
 function resetChrono(){
   pauseChrono();
-  chronoElapsed = 0;
-  paceAlerts = { min40:false, min45:false, min50:false, min55:false };
-  document.getElementById('chrono').textContent = '00:00';
-  document.getElementById('chrono').classList.remove('warn','over','running');
-  document.getElementById('chrono-label').textContent = 'Toca para iniciar';
-  document.getElementById('pace-fill').style.width = '0%';
-  document.getElementById('pace-fill').className = '';
-  document.getElementById('pace-label').textContent = '0 / 50 min';
+  chronoElapsed=0;
+  paceAlerts={min40:false,min45:false,min50:false,min55:false};
+  document.getElementById('chrono').textContent='00:00';
+  document.getElementById('chrono').className='';
+  document.getElementById('chrono-label').textContent='Objetivo: 40–50 min';
+  document.getElementById('pace-fill').style.width='0%';
+  document.getElementById('pace-fill').className='';
+  document.getElementById('pace-label').textContent='0 / 50 min';
   document.getElementById('pace-bar').classList.remove('show');
+  // CTA → INICIAR
+  const cta=document.getElementById('chrono-cta');
+  cta.className='ready';
+  document.getElementById('chrono-cta-label').textContent='INICIAR RUTA';
 }
 
 function updateChrono(){
@@ -753,9 +931,11 @@ window.toggleGPS=function(){
       document.getElementById('hud-spd').textContent=`${spdKmh>1?spdKmh.toFixed(0):'--'} km/h`;
       document.getElementById('hud-meta').textContent=`🏁 ${dMeta.toFixed(1)} km`;
 
-      // Checkpoints con audio
+      // Checkpoints con audio — detecta por trigger (400m antes del WP)
       PM.waypoints.forEach(wp=>{
-        if(!visited.has(wp.id)&&distKm(lat,lon,wp.lat,wp.lon)<.15){
+        const tLat = wp.trigger_lat || wp.lat;
+        const tLon = wp.trigger_lon || wp.lon;
+        if(!visited.has(wp.id) && distKm(lat,lon,tLat,tLon)<0.12){
           visited.add(wp.id);
           const msg=buildWPAudio(wp);
           notify(`📍 WP${wp.id}: ${wp.name}`, msg, wp.type==='summit');
@@ -837,50 +1017,70 @@ function skipGPS(){
   toast('GPS no disponible — explora la ruta manualmente','alert',4000);
 }
 
+
 // ══════════════════════════════════════════
-// PANEL WAYPOINT
+// BOTTOM SHEET WAYPOINT
 // ══════════════════════════════════════════
-let activeWP=null;
+let activeWP=null, sheetExpanded=false;
+
 function openPanel(wp){
   activeWP=wp.id;
-  document.getElementById('panel-num').textContent=`Waypoint ${wp.id} / 9`;
-  document.getElementById('panel-body').innerHTML=`
-    <div class="p-name">${wp.name}</div>
-    <div class="p-sub">${wp.sub}</div>
-    <div class="p-div"></div>
+  const col=wp.type==='summit'?'#FFB347':wp.type==='startend'?'#4CAF50':'#FF4500';
+  const badge=document.getElementById('sheet-badge');
+  badge.textContent=wp.id;
+  badge.style.background=col;
+  document.getElementById('sheet-name').textContent=wp.name;
+  document.getElementById('sheet-sub').textContent=wp.sub;
+  document.getElementById('sheet-ele').textContent=wp.ele+'m';
+  document.getElementById('sheet-km').textContent=wp.km+' km';
+  document.getElementById('sheet-alert-icon').textContent=wp.alert.t.split(' ')[0];
+  document.getElementById('sheet-alert-text').textContent=wp.alert.t+' — '+wp.alert.b;
+  document.getElementById('sheet-detail-inner').innerHTML=`
     <p class="p-desc">${wp.desc}</p>
     <div class="p-specs">
       ${wp.specs.map(([v,k],i)=>`<div class="p-spec${i<2?' hi':''}">
         <div class="p-spec-val">${v}</div><div class="p-spec-key">${k}</div></div>`).join('')}
     </div>
-    <div class="p-alert"><div class="p-alert-t">${wp.alert.t}</div><div class="p-alert-b">${wp.alert.b}</div></div>
     <div class="p-nav-lbl">🏁 Navegar hacia la meta</div>
     <div class="p-nav-dest">Caballito de Palo — Punto de llegada</div>
     <div class="nav-row">
       <a class="nav-btn gmaps" href="https://www.google.com/maps/dir/?api=1&destination=${PM.meta_lat},${PM.meta_lon}&travelmode=driving" target="_blank">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        Google Maps
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Google Maps
       </a>
       <a class="nav-btn waze" href="https://waze.com/ul?ll=${PM.meta_lat},${PM.meta_lon}&navigate=yes" target="_blank">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>
-        Waze
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm3.5 7.5c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-7 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3.5 7c-2.3 0-4.3-1.5-5-3.5h10c-.7 2-2.7 3.5-5 3.5z"/></svg>Waze
       </a>
     </div>
-    <div style="margin-top:10px;">
-      <button onclick="resetChrono()" style="width:100%;padding:9px;background:none;border:1px solid var(--border);
-        color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:11px;
-        letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">
-        ↺ Reiniciar cronómetro
-      </button>
-    </div>
-    <div class="p-coords" style="margin-top:10px;">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m snm</div>`;
-  document.getElementById('wp-panel').classList.add('open');
-  lmap.flyTo([wp.lat,wp.lon],15,{animate:true,duration:.8});
+    <button onclick="resetChrono()" style="width:100%;padding:9px;background:none;border:1px solid var(--border);
+      color:var(--grey);font-family:'Barlow Condensed',sans-serif;font-size:11px;
+      letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-top:4px;">↺ Reiniciar cronómetro</button>
+    <div class="p-coords">${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)} · ${wp.ele}m</div>`;
+  document.getElementById('wp-sheet').classList.add('open');
+  collapseSheetDetail();
+  if(lmap) lmap.panTo([wp.lat,wp.lon],{animate:true,duration:.5});
 }
 
-function closePanel(){
-  document.getElementById('wp-panel').classList.remove('open');
+function closePanel(e){
+  if(e) e.stopPropagation();
+  document.getElementById('wp-sheet').classList.remove('open');
+  collapseSheetDetail();
   activeWP=null;
+}
+
+function toggleSheetDetail(){
+  sheetExpanded?collapseSheetDetail():expandSheetDetail();
+}
+function expandSheetDetail(){
+  sheetExpanded=true;
+  document.getElementById('sheet-detail').classList.add('expanded');
+  document.getElementById('sheet-expand-arrow').textContent='▼';
+  document.getElementById('sheet-expand-label').textContent='Colapsar';
+}
+function collapseSheetDetail(){
+  sheetExpanded=false;
+  document.getElementById('sheet-detail').classList.remove('expanded');
+  document.getElementById('sheet-expand-arrow').textContent='▲';
+  document.getElementById('sheet-expand-label').textContent='Ver detalles';
 }
 
 (function(){
@@ -889,8 +1089,24 @@ function closePanel(){
 })();
 
 // ══════════════════════════════════════════
-// UTILS
+// SERVICE WORKER — registro y offline
 // ══════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/PASEO-PROMOBILITY/sw.js', {scope:'/PASEO-PROMOBILITY/'})
+    .then(reg => {
+      console.log('[App] SW registrado:', reg.scope);
+      // Escuchar progreso de descarga
+      navigator.serviceWorker.addEventListener('message', event => {
+        const { type, cached, total, failed } = event.data || {};
+        if(type === 'CACHE_COMPLETE'){
+          toast('✓ Mapa disponible sin internet', 'normal', 4000);
+        }
+      });
+    })
+    .catch(err => console.warn('[App] SW error:', err));
+}
+
+
 function distKm(la1,lo1,la2,lo2){
   const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
   const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
