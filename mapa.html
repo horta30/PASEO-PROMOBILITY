@@ -684,12 +684,12 @@ function updateChrono(){
 // MAPA LEAFLET
 // ══════════════════════════════════════════
 const TILES={
-  // OSM — default, más estable y sin rate limit
+  // OSM Standard — default, estable, sin rate limit
   osm:       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   // Satélite ArcGIS — confiable
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  // Topo — OpenTopoMap puede caerse, es el tercer tier
-  topo:      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  // Topo via ArcGIS — confiable, sin rate limit
+  topo:      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
 };
 const START_LAT=PM.waypoints[0].lat, START_LON=PM.waypoints[0].lon;
 const lmap=L.map('leaflet-map',{center:[START_LAT,START_LON],zoom:15,zoomControl:false,attributionControl:false});
