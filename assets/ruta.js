@@ -16,69 +16,89 @@ const PM = {
   },
 
   // 9 Waypoints oficiales depurados en Google Earth Pro
+  // trigger_lat/lon = coordenada 400m ANTES del WP en la ruta real
+  // → el audio avisa lo que VIENE, no lo que ya pasó
   waypoints: [
     {
       id:1, name:'INICIO / FIN', sub:'Caballito de Palo',
-      lat:-32.69584, lon:-71.40572, ele:101, km:0, type:'startend',
+      lat:-32.69584, lon:-71.40572,
+      trigger_lat:-32.69584, trigger_lon:-71.40572,
+      ele:101, km:0, type:'startend',
       desc:'Punto de partida y llegada del circuito. Zona amplia para estacionamiento y campamento de marcas. Verificar presión de neumáticos y combustible antes de partir.',
       specs:[['101m','Altitud'],['0 km','Inicio'],['Asfalto','Terreno'],['≈20°C','Temp.']],
       alert:{t:'✓ Inicio del circuito', b:'Punto de reunión del grupo. Briefing de ruta aquí antes de salir.'}
     },
     {
       id:2, name:'WP2', sub:'Ascenso Cordillera — 603m',
-      lat:-32.71138, lon:-71.34734, ele:603, km:5.2, type:'mid',
+      lat:-32.71138, lon:-71.34734,
+      trigger_lat:-32.711199, trigger_lon:-71.350271,
+      ele:603, km:4.5, type:'mid',
       desc:'Tramo de ascenso sostenido por la cordillera de la costa. Curvas cerradas con vistas al interior. El punto más alto está a menos de 500m adelante.',
-      specs:[['603m','Altitud'],['5.2 km','Recorrido'],['Sinuoso','Terreno'],['≈15°C','Temp.']],
+      specs:[['603m','Altitud'],['4.5 km','Recorrido'],['Sinuoso','Terreno'],['≈15°C','Temp.']],
       alert:{t:'🔺 Ascenso técnico', b:'Curvas cerradas. Velocidad recomendada 40–60 km/h. Mantener distancia entre motos.'}
     },
     {
       id:3, name:'INTERSECCIÓN', sub:'La Canela',
-      lat:-32.70312, lon:-71.33135, ele:350, km:7.8, type:'mid',
+      lat:-32.70312, lon:-71.33135,
+      trigger_lat:-32.702799, trigger_lon:-71.333895,
+      ele:430, km:7.5, type:'mid',
       desc:'Intersección clave en la ruta. Mantener derecha. Señalización reducida en esta zona.',
-      specs:[['350m','Altitud'],['7.8 km','Recorrido'],['Cruce','Tipo'],['≈16°C','Temp.']],
-      alert:{t:'⚠ Intersección', b:'Reducir velocidad. Verificar que todo el grupo pase antes de continuar.'}
+      specs:[['430m','Altitud'],['7.5 km','Recorrido'],['Cruce','Tipo'],['≈16°C','Temp.']],
+      alert:{t:'⚠ Intersección en 400m', b:'Reducir velocidad. Verificar que todo el grupo pase antes de continuar.'}
     },
     {
-      id:4, name:'STOP', sub:'Bajada Peligrosa — CIMA 655m',
-      lat:-32.68066, lon:-71.37880, ele:655, km:8.9, type:'summit',
-      desc:'El techo de la ruta. Vista panorámica 360°. Ideal para fotografía de producto y pausa de experiencia de marca. Descenso peligroso a continuación.',
-      specs:[['655m','Altitud'],['8.9 km','Recorrido'],['Cresta','Terreno'],['≈11°C','Temp.']],
-      alert:{t:'🛑 PARADA OBLIGATORIA', b:'Bajada peligrosa. Revisar frenos. Zona fotográfica premium.'}
-    },
-    {
-      id:5, name:'WP4', sub:'La Canela',
-      lat:-32.68094, lon:-71.35586, ele:208, km:13.5, type:'mid',
+      id:4, name:'WP4', sub:'La Canela — bajada',
+      lat:-32.68094, lon:-71.35586,
+      trigger_lat:-32.680748, trigger_lon:-71.352018,
+      ele:208, km:12.6, type:'mid',
       desc:'Sector rural tranquilo de La Canela. Descenso activo, la ruta se ensancha. Microclima propio con vegetación mediterránea.',
-      specs:[['208m','Altitud'],['13.5 km','Recorrido'],['Bajada','Terreno'],['≈18°C','Temp.']],
-      alert:{t:'↘ Descenso activo', b:'Posible grava suelta en curvas. Atención a animales.'}
+      specs:[['208m','Altitud'],['12.6 km','Recorrido'],['Bajada','Terreno'],['≈18°C','Temp.']],
+      alert:{t:'↘ Descenso activo en 400m', b:'Posible grava suelta en curvas. Atención a animales.'}
     },
     {
-      id:6, name:'WP5', sub:'Rungue Sur',
-      lat:-32.67734, lon:-71.38605, ele:243, km:17.1, type:'mid',
+      id:5, name:'STOP', sub:'Bajada Peligrosa — CIMA 655m',
+      lat:-32.68066, lon:-71.37880,
+      trigger_lat:-32.679437, trigger_lon:-71.375849,
+      ele:655, km:15.4, type:'summit',
+      desc:'El techo de la ruta. Vista panorámica 360°. Ideal para fotografía de producto y pausa de experiencia de marca. Descenso peligroso a continuación.',
+      specs:[['655m','Altitud'],['15.4 km','Recorrido'],['Cresta','Terreno'],['≈11°C','Temp.']],
+      alert:{t:'🛑 PARADA OBLIGATORIA en 400m', b:'Bajada peligrosa. Prepárate para detener la moto. Revisar frenos.'}
+    },
+    {
+      id:6, name:'WP6', sub:'Rungue Sur',
+      lat:-32.67734, lon:-71.38605,
+      trigger_lat:-32.678596, trigger_lon:-71.383206,
+      ele:243, km:16.6, type:'mid',
       desc:'Valle interior de Rungue Sur. Mayor vegetación y fauna local. Ritmo más fluido. Zona de interés para actividades de naturaleza.',
-      specs:[['243m','Altitud'],['17.1 km','Recorrido'],['Valle','Terreno'],['≈19°C','Temp.']],
-      alert:{t:'🌿 Fauna local', b:'Posible cruce de animales. Velocidad prudente.'}
+      specs:[['243m','Altitud'],['16.6 km','Recorrido'],['Valle','Terreno'],['≈19°C','Temp.']],
+      alert:{t:'🌿 Fauna local en 400m', b:'Posible cruce de animales. Velocidad prudente.'}
     },
     {
       id:7, name:'INTERSECCIÓN', sub:'Caballito de Palo Alto',
-      lat:-32.68898, lon:-71.39867, ele:200, km:19.2, type:'mid',
+      lat:-32.68898, lon:-71.39867,
+      trigger_lat:-32.685475, trigger_lon:-71.399414,
+      ele:114, km:19.4, type:'mid',
       desc:'Intersección alta antes del descenso final. Continuar recto hacia el descenso a Caballito de Palo.',
-      specs:[['200m','Altitud'],['19.2 km','Recorrido'],['Cruce','Tipo'],['≈19°C','Temp.']],
-      alert:{t:'→ Seguir recto', b:'Intersección con desvío. Mantener la ruta hacia el cierre del circuito.'}
+      specs:[['114m','Altitud'],['19.4 km','Recorrido'],['Cruce','Tipo'],['≈19°C','Temp.']],
+      alert:{t:'→ Seguir recto en 400m', b:'Intersección con desvío. Mantener la ruta hacia el cierre del circuito.'}
     },
     {
       id:8, name:'OFF ROAD', sub:'Test Ride Zone',
-      lat:-32.69616, lon:-71.40496, ele:43, km:21.5, type:'mid',
+      lat:-32.69616, lon:-71.40496,
+      trigger_lat:-32.695091, trigger_lon:-71.404637,
+      ele:43, km:20.7, type:'mid',
       desc:'Zona habilitada para test ride de motos adventure. Terreno irregular ideal para probar capacidades fuera del asfalto.',
-      specs:[['43m','Altitud'],['21.5 km','Recorrido'],['Off road','Terreno'],['≈21°C','Temp.']],
-      alert:{t:'🏍 Test Ride Zone', b:'Solo motos adventure/enduro. Zona de activación de marcas.'}
+      specs:[['43m','Altitud'],['20.7 km','Recorrido'],['Off road','Terreno'],['≈21°C','Temp.']],
+      alert:{t:'🏍 Zona Off Road en 400m', b:'Solo motos adventure/enduro. Zona de activación de marcas.'}
     },
     {
       id:9, name:'INTERSECCIÓN', sub:'Ruta Puchuncaví–Maite',
-      lat:-32.71661, lon:-71.40682, ele:50, km:24.1, type:'mid',
+      lat:-32.71661, lon:-71.40682,
+      trigger_lat:-32.713148, trigger_lon:-71.405405,
+      ele:44, km:23.4, type:'mid',
       desc:'Intersección con la ruta principal Puchuncaví–Maite. Último punto antes del regreso. A 1.8 km de la llegada.',
-      specs:[['50m','Altitud'],['24.1 km','Recorrido'],['Asfalto','Terreno'],['≈21°C','Temp.']],
-      alert:{t:'⚠ Ruta principal', b:'Precaución con tráfico. Llegar en grupo. Casi en la meta.'}
+      specs:[['44m','Altitud'],['23.4 km','Recorrido'],['Asfalto','Terreno'],['≈21°C','Temp.']],
+      alert:{t:'⚠ Ruta principal en 400m', b:'Precaución con tráfico. Llegar en grupo. Casi en la meta.'}
     }
   ],
 
