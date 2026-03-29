@@ -4,8 +4,8 @@
 // Área: Cordillera de la Costa, V Región
 // ══════════════════════════════════════════
 
-const CACHE_NAME = 'promobility-v1';
-const CACHE_TILES = 'promobility-tiles-v1';
+const CACHE_NAME = 'promobility-v2';
+const CACHE_TILES = 'promobility-tiles-v2';
 
 // Archivos estáticos del app
 const STATIC_FILES = [
